@@ -19,7 +19,6 @@
     <div class="card-body" style="padding:14px 18px;">
         <form method="GET" class="filter-row">
             <div class="search-wrap" style="flex:1;min-width:180px;">
-                <i class="fas fa-search"></i>
                 <input type="text" name="search" class="form-control"
                     placeholder="Cari nama barang atau kode..."
                     value="<?php echo e(request('search')); ?>">

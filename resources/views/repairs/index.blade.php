@@ -20,7 +20,6 @@
     <div class="card-body" style="padding:16px 20px;">
         <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
             <div class="search-bar" style="flex:1;min-width:200px;">
-                <i class="fas fa-search"></i>
                 <input type="text" name="search" class="form-control" placeholder="Cari nama barang, kode perbaikan..." value="{{ request('search') }}">
             </div>
             <div style="min-width:160px;">

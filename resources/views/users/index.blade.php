@@ -230,15 +230,6 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Password Baru (Kosongkan jika tidak diubah)</label>
-                        <input type="password" name="password" class="form-control" placeholder="Password baru">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Konfirmasi Password</label>
-                        <input type="password" name="password_confirmation" class="form-control" placeholder="Ulangi password baru">
-                    </div>
-                </div>
 
                 <div style="border-top:1px solid #f1f5f9;padding-top:14px;margin-top:4px;">
                     <label class="form-label">Hak Akses Menu</label>
