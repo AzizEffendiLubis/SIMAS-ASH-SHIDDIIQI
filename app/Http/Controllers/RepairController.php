@@ -4,39 +4,39 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Repair;
+use App\Models\RepairPhoto;
+use App\Models\AssetConditionHistory;
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class RepairController extends Controller
 {
     public function index(Request $request)
     {
-        $user = Auth::user();
-        $query = Repair::with(['asset', 'pelapor', 'teknisi']);
+        $user  = Auth::user();
+        $query = Repair::forUser($user)->with(['pelapor', 'asset', 'teknisi']);
 
-        if (!$user->isSuperAdmin() && !$user->iskepalayayasan()) {
-            if ($user->isPetugasPerbaikan()) {
-                $query->where('ditangani_oleh', $user->id);
-            } else {
-                $query->whereHas('asset', fn($a) => $a->where('unit_kerja', $user->unit_kerja));
-            }
-        }
-
-        if ($request->search) {
-            $query->where(function ($q) use ($request) {
-                $q->where('kode_perbaikan', 'like', "%{$request->search}%")
-                  ->orWhere('deskripsi_kerusakan', 'like', "%{$request->search}%")
-                  ->orWhereHas('asset', fn($a) => $a->where('nama_barang', 'like', "%{$request->search}%"));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_perbaikan',       'like', "%{$search}%")
+                  ->orWhere('deskripsi_kerusakan', 'like', "%{$search}%")
+                  ->orWhere('nama_aset_laporan',   'like', "%{$search}%");
             });
         }
 
-        if ($request->status) {
-            $query->where('status', $request->status);
+        if ($request->filled('status')) {
+            $query->status($request->status);
         }
 
-        $repairs = $query->latest()->paginate(10)->appends(request()->query());
+        $sortDir = $request->get('sort') === 'terlama' ? 'asc' : 'desc';
+        $query->orderBy('tanggal_laporan', $sortDir);
+
+        $repairs = $query->paginate(15)->appends($request->query());
 
         return view('repairs.index', compact('repairs'));
     }
@@ -44,101 +44,262 @@ class RepairController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $assets = Asset::forUser($user)->where('kondisi_barang', '!=', 'Baik')->orWhere('kondisi_barang', 'Rusak Ringan')->get();
-        $allAssets = Asset::forUser($user)->get();
-        $teknisi = User::where('role', 'petugas_perbaikan')->where('status', 'aktif')->get();
-        return view('repairs.create', compact('allAssets', 'teknisi'));
+
+        // Aset untuk autocomplete — difilter per unit/role.
+        // Admin Unit & User: hanya aset di unit mereka (unit_id = $user->unit_id).
+        // Admin Utama & Kepala Yayasan: semua aset lintas unit.
+        // Hanya kondisi aktif & rusak — tidak masuk akal lapor aset hilang/habis_pakai.
+        $assetsQuery = Asset::orderBy('nama_barang')
+            ->whereIn('kondisi_barang', ['aktif', 'rusak']);
+
+        if ($user->unit_id && !$user->isAdminUtama() && !$user->isKepalaYayasan()) {
+            $assetsQuery->where('unit_id', $user->unit_id);
+        }
+
+        $assets = $assetsQuery->get(['id', 'nama_barang', 'kode_aset', 'lokasi_barang', 'unit_id']);
+
+        return view('repairs.create', compact('assets'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'asset_id' => 'required|exists:assets,id',
+            // Selalu wajib — baik pilih dari autocomplete maupun tulis manual
+            'nama_aset_laporan'   => 'required|string|max:255',
+
+            // Opsional — diisi JS hanya jika pengguna pilih dari saran autocomplete.
+            // Kosong = laporan manual tanpa keterkaitan ke aset terdaftar.
+            'asset_id'            => 'nullable|exists:assets,id',
+
             'deskripsi_kerusakan' => 'required|string',
-            'ditangani_oleh' => 'nullable|exists:users,id',
-            'foto_kerusakan' => 'nullable|image|max:2048',
+            'lokasi_kerusakan'    => 'nullable|string|max:255',
+            'fotos'               => 'required|array|min:1|max:5',
+            'fotos.*'             => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $count = Repair::count() + 1;
-        $validated['kode_perbaikan'] = 'PRB-' . date('Y') . str_pad($count, 3, '0', STR_PAD_LEFT);
-        $validated['tanggal_laporan'] = today();
-        $validated['dilaporkan_oleh'] = Auth::id();
-        $validated['status'] = 'Pending';
+        // Double-check server-side: pastikan asset_id yang dikirim memang
+        // dari unit pengguna (tidak bisa di-bypass dari luar autocomplete UI)
+        if (!empty($validated['asset_id'])) {
+            $user  = Auth::user();
+            $asset = Asset::findOrFail($validated['asset_id']);
 
-        if ($request->hasFile('foto_kerusakan')) {
-            $validated['foto_kerusakan'] = $request->file('foto_kerusakan')->store('repairs', 'public');
+            if ($user->unit_id && !$user->isAdminUtama() && !$user->isKepalaYayasan()) {
+                if ($asset->unit_id !== $user->unit_id) {
+                    abort(403, 'Anda hanya dapat melaporkan aset dari unit Anda sendiri.');
+                }
+            }
+
+            // Auto-isi lokasi dari aset jika tidak diisi manual
+            if (empty($validated['lokasi_kerusakan'])) {
+                $validated['lokasi_kerusakan'] = $asset->lokasi_barang;
+            }
         }
 
-        Repair::create($validated);
+        DB::transaction(function () use ($validated, $request) {
+            $user = Auth::user();
 
-        // Update asset condition
-        $asset = Asset::find($validated['asset_id']);
-        $asset->update(['kondisi_barang' => 'Rusak Ringan']);
+            $today = now()->format('Ymd');
+            $count = Repair::whereDate('tanggal_laporan', today())->count() + 1;
+
+            $kodePerbaikan = 'LAP-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+            while (Repair::where('kode_perbaikan', $kodePerbaikan)->exists()) {
+                $count++;
+                $kodePerbaikan = 'LAP-' . $today . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+            }
+
+            $repair = Repair::create([
+                'kode_perbaikan'      => $kodePerbaikan,
+                'nama_aset_laporan'   => $validated['nama_aset_laporan'],
+                'asset_id'            => $validated['asset_id'] ?? null,
+                'deskripsi_kerusakan' => $validated['deskripsi_kerusakan'],
+                'lokasi_kerusakan'    => $validated['lokasi_kerusakan'] ?? null,
+                'status'              => 'pending',
+                'tanggal_laporan'     => now(),
+                'dilaporkan_oleh'     => $user->id,
+                'ditangani_oleh'      => null,
+            ]);
+
+            if ($request->hasFile('fotos')) {
+                foreach ($request->file('fotos') as $foto) {
+                    $path = $foto->store('repairs', 'public');
+                    RepairPhoto::create([
+                        'repair_id' => $repair->id,
+                        'file_path' => $path,
+                    ]);
+                }
+            }
+
+            ActivityLog::record(
+                action:      'tambah_laporan_kerusakan',
+                subject:     $repair,
+                description: "Melaporkan kerusakan: {$repair->nama_aset_laporan} ({$repair->kode_perbaikan})",
+                newData:     $repair->only([
+                    'kode_perbaikan', 'nama_aset_laporan',
+                    'deskripsi_kerusakan', 'status', 'dilaporkan_oleh',
+                ]),
+            );
+        });
 
         return redirect()->route('repairs.index')
-            ->with('success', 'Laporan perbaikan berhasil dibuat!');
+            ->with('success', 'Laporan kerusakan berhasil dikirim.');
     }
 
     public function show(Repair $repair)
     {
-        $repair->load(['asset', 'pelapor', 'teknisi']);
-        return view('repairs.show', compact('repair'));
+        $user = Auth::user();
+
+        $repair->load(['pelapor.unit', 'asset.unit', 'photos']);
+
+        // Teknisi hanya dimuat untuk Admin Utama dan Teknisi yang menangani
+        $showTeknisi = $user->isAdminUtama() || $user->isTeknisi();
+        if ($showTeknisi) {
+            $repair->load('teknisi');
+        }
+
+        return view('repairs.show', compact('repair', 'showTeknisi'));
     }
 
     public function edit(Repair $repair)
     {
         $user = Auth::user();
-        $teknisi = User::where('role', 'petugas_perbaikan')->where('status', 'aktif')->get();
-        $assets = Asset::forUser($user)->get();
-        return view('repairs.edit', compact('repair', 'teknisi', 'assets'));
+
+        if ($user->isTeknisi() && $repair->ditangani_oleh !== $user->id) {
+            abort(403);
+        }
+
+        if (!$user->isAdminUtama() && !$user->isTeknisi()) {
+            abort(403);
+        }
+
+        $teknisiList = null;
+        if ($user->isAdminUtama()) {
+            $teknisiList = User::where('role', 'teknisi')
+                ->where('status', 'aktif')
+                ->orderBy('name')
+                ->get();
+        }
+
+        // "FK opsional ke assets — bisa dikaitkan admin setelah verifikasi."
+        $assets = null;
+        if ($user->isAdminUtama()) {
+            $assets = Asset::orderBy('nama_barang')->get(['id', 'nama_barang', 'kode_aset']);
+        }
+
+        $repair->load(['pelapor', 'photos', 'teknisi', 'asset']);
+
+        return view('repairs.edit', compact('repair', 'teknisiList', 'assets'));
     }
 
     public function update(Request $request, Repair $repair)
     {
         $user = Auth::user();
 
-        if ($user->isPetugasPerbaikan()) {
-            // Teknisi can only update status and action
-            $validated = $request->validate([
-                'status' => 'required|in:Pending,Sedang Diperbaiki,Selesai',
-                'tindakan_perbaikan' => 'required|string',
-                'biaya_perbaikan' => 'nullable|numeric|min:0',
-            ]);
-
-            if ($validated['status'] === 'Selesai') {
-                $validated['tanggal_selesai'] = today();
-                // Update asset condition back to good
-                $repair->asset->update(['kondisi_barang' => 'Baik']);
-            }
-        } else {
-            $validated = $request->validate([
-                'asset_id' => 'required|exists:assets,id',
-                'deskripsi_kerusakan' => 'required|string',
-                'status' => 'required|in:Pending,Sedang Diperbaiki,Selesai',
-                'tindakan_perbaikan' => 'nullable|string',
-                'ditangani_oleh' => 'nullable|exists:users,id',
-                'biaya_perbaikan' => 'nullable|numeric|min:0',
-            ]);
-
-            if ($validated['status'] === 'Selesai' && !$repair->tanggal_selesai) {
-                $validated['tanggal_selesai'] = today();
-                $repair->asset->update(['kondisi_barang' => 'Baik']);
-            }
+        if (!$user->isAdminUtama() && !$user->isTeknisi()) {
+            abort(403);
         }
 
-        $repair->update($validated);
+        DB::transaction(function () use ($request, $repair, $user) {
+            $statusLama = $repair->status;
 
-        return redirect()->route('repairs.index')
-            ->with('success', 'Data perbaikan berhasil diperbarui!');
+            if ($user->isTeknisi()) {
+                if ($repair->ditangani_oleh !== $user->id) abort(403);
+
+                $validated = $request->validate([
+                    'status'             => 'required|in:sedang_diperbaiki,selesai',
+                    'tindakan_perbaikan' => 'required|string',
+                    'biaya_perbaikan'    => 'nullable|numeric|min:0',
+                ]);
+
+                $updateData = [
+                    'status'             => $validated['status'],
+                    'tindakan_perbaikan' => $validated['tindakan_perbaikan'],
+                    'biaya_perbaikan'    => $validated['biaya_perbaikan'] ?? null,
+                ];
+
+                if ($validated['status'] === 'selesai') {
+                    $updateData['tanggal_selesai'] = today();
+
+                    if ($repair->asset) {
+                        $kondisiAsetLama = $repair->asset->kondisi_barang;
+                        $repair->asset->update(['kondisi_barang' => 'aktif']);
+
+                        AssetConditionHistory::create([
+                            'asset_id'     => $repair->asset->id,
+                            'kondisi_lama' => $kondisiAsetLama,
+                            'kondisi_baru' => 'aktif',
+                            'catatan'      => "Perbaikan selesai — {$repair->kode_perbaikan}",
+                            'changed_by'   => $user->id,
+                        ]);
+                    }
+                }
+
+                $repair->update($updateData);
+
+            } else {
+                if (!$user->isAdminUtama()) abort(403);
+
+                $validated = $request->validate([
+                    'nama_aset_laporan'   => 'required|string|max:255',
+                    'deskripsi_kerusakan' => 'required|string',
+                    'lokasi_kerusakan'    => 'nullable|string|max:255',
+                    'status'              => 'required|in:pending,sedang_diperbaiki,selesai',
+                    'tindakan_perbaikan'  => 'nullable|string',
+                    'biaya_perbaikan'     => 'nullable|numeric|min:0',
+                    'ditangani_oleh'      => [
+                        'nullable',
+                        'exists:users,id',
+                        function ($attribute, $value, $fail) {
+                            if ($value) {
+                                $teknisi = User::find($value);
+                                if (!$teknisi || $teknisi->role !== 'teknisi' || $teknisi->status !== 'aktif') {
+                                    $fail('Pengguna yang dipilih bukan teknisi aktif.');
+                                }
+                            }
+                        },
+                    ],
+                    'asset_id' => 'nullable|exists:assets,id',
+                ]);
+
+                $updateData = $validated;
+
+                if ($validated['status'] === 'selesai' && !$repair->tanggal_selesai) {
+                    $updateData['tanggal_selesai'] = today();
+
+                    $assetId = $validated['asset_id'] ?? $repair->asset_id;
+                    $asset   = $assetId ? Asset::find($assetId) : null;
+
+                    if ($asset) {
+                        $kondisiAsetLama = $asset->kondisi_barang;
+                        $asset->update(['kondisi_barang' => 'aktif']);
+
+                        AssetConditionHistory::create([
+                            'asset_id'     => $asset->id,
+                            'kondisi_lama' => $kondisiAsetLama,
+                            'kondisi_baru' => 'aktif',
+                            'catatan'      => "Perbaikan selesai — {$repair->kode_perbaikan}",
+                            'changed_by'   => $user->id,
+                        ]);
+                    }
+                }
+
+                $repair->update($updateData);
+            }
+
+            ActivityLog::record(
+                action:      'update_progres_perbaikan',
+                subject:     $repair,
+                description: "Mengubah status laporan {$repair->kode_perbaikan}: {$statusLama} → {$repair->status}",
+                oldData:     ['status' => $statusLama],
+                newData:     ['status' => $repair->status],
+            );
+        });
+
+        return redirect()->route('repairs.show', $repair)
+            ->with('success', 'Laporan perbaikan berhasil diperbarui.');
     }
 
     public function destroy(Repair $repair)
     {
-        if ($repair->foto_kerusakan) {
-            Storage::disk('public')->delete($repair->foto_kerusakan);
-        }
-        $repair->delete();
-        return redirect()->route('repairs.index')
-            ->with('success', 'Data perbaikan berhasil dihapus!');
+        abort(403, 'Laporan kerusakan tidak dapat dihapus.');
     }
 }

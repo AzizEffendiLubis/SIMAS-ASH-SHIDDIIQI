@@ -3,53 +3,106 @@
 @section('page-title', 'Perbaikan Aset')
 
 @section('content')
-<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-    <div>
+
+{{-- ── Page Header ── --}}
+<div class="page-header-row">
+    <div class="ph-left">
         <h1>Perbaikan Aset</h1>
         <p>Kelola laporan kerusakan dan perbaikan aset</p>
     </div>
-    @if(!auth()->user()->isPetugasPerbaikan())
-    <a href="{{ route('repairs.create') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Laporkan Kerusakan
-    </a>
-    @endif
+    <div class="ph-right">
+        {{-- Teknisi tidak bisa membuat laporan baru --}}
+        @if(!auth()->user()->isTeknisi())
+        <a href="{{ route('repairs.create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Laporkan Kerusakan
+        </a>
+        @endif
+    </div>
 </div>
 
-<!-- Filters -->
-<div class="card" style="margin-bottom:20px;">
-    <div class="card-body" style="padding:16px 20px;">
-        <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-            <div class="search-bar" style="flex:1;min-width:200px;">
-                <input type="text" name="search" class="form-control" placeholder="Cari nama barang, kode perbaikan..." value="{{ request('search') }}">
+{{-- ── Filter ── --}}
+<div class="card mb-16">
+    <div class="card-body" style="padding:14px 18px;">
+        <form method="GET" action="{{ route('repairs.index') }}" class="filter-row">
+
+            <div class="search-wrap" style="flex:1;min-width:200px;">
+                <i class="fas fa-magnifying-glass"></i>
+                <input type="text" name="search" class="form-control"
+                    placeholder="Cari nama barang, kode, deskripsi..."
+                    value="{{ request('search') }}">
             </div>
-            <div style="min-width:160px;">
-                <select name="status" class="form-control">
-                    <option value="">Semua Status</option>
-                    <option value="Pending" {{ request('status')=='Pending'?'selected':'' }}>Pending</option>
-                    <option value="Sedang Diperbaiki" {{ request('status')=='Sedang Diperbaiki'?'selected':'' }}>Sedang Diperbaiki</option>
-                    <option value="Selesai" {{ request('status')=='Selesai'?'selected':'' }}>Selesai</option>
-                </select>
+
+            {{-- Nilai sesuai enum migration: pending|sedang_diperbaiki|selesai --}}
+            <select name="status" class="form-control" style="min-width:170px;width:auto;">
+                <option value="">Semua Status</option>
+                <option value="pending"
+                    {{ request('status') === 'pending' ? 'selected' : '' }}>
+                    Menunggu
+                </option>
+                <option value="sedang_diperbaiki"
+                    {{ request('status') === 'sedang_diperbaiki' ? 'selected' : '' }}>
+                    Sedang Diperbaiki
+                </option>
+                <option value="selesai"
+                    {{ request('status') === 'selesai' ? 'selected' : '' }}>
+                    Selesai
+                </option>
+            </select>
+
+            {{-- Sort — RepairController::index() membaca request('sort') --}}
+            <select name="sort" class="form-control" style="min-width:140px;width:auto;">
+                <option value="terbaru"
+                    {{ request('sort', 'terbaru') === 'terbaru' ? 'selected' : '' }}>
+                    Terbaru
+                </option>
+                <option value="terlama"
+                    {{ request('sort') === 'terlama' ? 'selected' : '' }}>
+                    Terlama
+                </option>
+            </select>
+
+            <div style="display:flex;gap:8px;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                @if(request()->hasAny(['search', 'status', 'sort']))
+                <a href="{{ route('repairs.index') }}" class="btn btn-outline">
+                    <i class="fas fa-xmark"></i> Reset
+                </a>
+                @endif
             </div>
-            <button type="submit" class="btn btn-primary" style="height:42px;"><i class="fas fa-filter"></i> Filter</button>
-            @if(request()->hasAny(['search','status']))
-            <a href="{{ route('repairs.index') }}" class="btn btn-outline" style="height:42px;">Reset</a>
-            @endif
+
         </form>
     </div>
 </div>
 
+{{-- ── Tabel ── --}}
 <div class="card">
+    <div class="card-header">
+        <h2>Semua Laporan</h2>
+        <span style="font-size:12px;color:var(--gray-400);">
+            {{ $repairs->total() }} laporan ditemukan
+        </span>
+    </div>
+
     <div class="card-body" style="padding:0;">
         <div class="table-wrap">
+            @php
+                $colCount = (auth()->user()->isAdminUtama() || auth()->user()->isTeknisi()) ? 8 : 7;
+            @endphp
             <table>
                 <thead>
                     <tr>
                         <th>Kode</th>
                         <th>Nama Barang</th>
                         <th>Lokasi</th>
-                        <th>Deskripsi Kerusakan</th>
-                        <th>Tanggal Laporan</th>
+                        <th>Deskripsi</th>
+                        <th style="white-space:nowrap;">Tanggal</th>
+                        {{-- Petugas: hanya Admin Utama & Teknisi
+                             Dokumen: "Petugas perbaikan tidak ditampilkan kepada pengguna pelapor." --}}
+                        @if(auth()->user()->isAdminUtama() || auth()->user()->isTeknisi())
                         <th>Petugas</th>
+                        @endif
                         <th>Status</th>
                         <th style="width:90px;">Aksi</th>
                     </tr>
@@ -57,76 +110,106 @@
                 <tbody>
                     @forelse($repairs as $repair)
                     <tr>
-                        <td><code style="font-size:12px;background:#f1f5f9;padding:2px 7px;border-radius:5px;">{{ $repair->kode_perbaikan }}</code></td>
                         <td>
-                            <div style="font-weight:600;">{{ $repair->asset->nama_barang ?? '-' }}</div>
-                            <div style="font-size:12px;color:#94a3b8;">{{ $repair->asset->kategori ?? '' }}</div>
+                            <code style="font-size:12px;background:var(--gray-100);
+                                padding:2px 7px;border-radius:5px;color:var(--gray-600);">
+                                {{ $repair->kode_perbaikan }}
+                            </code>
                         </td>
-                        <td style="font-size:13px;">{{ $repair->asset->lokasi_barang ?? '-' }}</td>
-                        <td style="font-size:13px;max-width:200px;">
-                            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;" title="{{ $repair->deskripsi_kerusakan }}">
+                        <td>
+                            <div style="font-weight:600;font-size:13.5px;color:var(--gray-800);">
+                                {{ $repair->nama_aset_laporan }}
+                            </div>
+                            {{-- asset: FK opsional, dikaitkan Admin Utama setelah verifikasi --}}
+                            @if($repair->asset)
+                            <div style="font-size:12px;color:var(--gray-400);">
+                                {{ $repair->asset->kode_aset }} · {{ $repair->asset->kategori }}
+                            </div>
+                            @endif
+                        </td>
+                        <td style="font-size:13px;color:var(--gray-500);">
+                            {{-- lokasi laporan; fallback lokasi aset jika sudah dikaitkan --}}
+                            {{ $repair->lokasi_kerusakan
+                                ?? optional($repair->asset)->lokasi_barang
+                                ?? '—' }}
+                        </td>
+                        <td style="font-size:13px;color:var(--gray-600);max-width:200px;">
+                            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;"
+                                 title="{{ $repair->deskripsi_kerusakan }}">
                                 {{ $repair->deskripsi_kerusakan }}
                             </div>
                         </td>
-                        <td style="font-size:13px;">{{ $repair->tanggal_laporan->format('d/m/Y') }}</td>
-                        <td style="font-size:13px;">{{ $repair->teknisi->name ?? '<span style="color:#94a3b8;">Belum ditugaskan</span>' }}</td>
+                        <td style="font-size:13px;white-space:nowrap;color:var(--gray-600);">
+                            {{ $repair->tanggal_laporan->format('d M Y') }}
+                        </td>
+                        {{-- Teknisi: ada di DB, tidak tampil ke pelapor biasa --}}
+                        @if(auth()->user()->isAdminUtama() || auth()->user()->isTeknisi())
+                        <td style="font-size:13px;">
+                            @if($repair->teknisi)
+                                <span style="font-weight:500;color:var(--gray-700);">
+                                    {{ $repair->teknisi->name }}
+                                </span>
+                            @else
+                                <span style="color:var(--gray-300);">Belum ditugaskan</span>
+                            @endif
+                        </td>
+                        @endif
                         <td>
-                            <span class="badge {{ $repair->status === 'Selesai' ? 'badge-success' : ($repair->status === 'Sedang Diperbaiki' ? 'badge-info' : 'badge-warning') }}">
-                                {{ $repair->status }}
+                            {{-- status_badge & status_label: accessor Repair model --}}
+                            <span class="badge {{ $repair->status_badge }}">
+                                {{ $repair->status_label }}
                             </span>
                         </td>
                         <td>
                             <div style="display:flex;gap:5px;">
-                                <a href="{{ route('repairs.show', $repair) }}" class="btn btn-outline btn-sm btn-icon" title="Detail"><i class="fas fa-eye"></i></a>
-                                <a href="{{ route('repairs.edit', $repair) }}" class="btn btn-outline btn-sm btn-icon" title="Edit"><i class="fas fa-pen"></i></a>
-                                @if(auth()->user()->isSuperAdmin())
-                                <button class="btn btn-outline btn-sm btn-icon" style="color:#dc2626;" title="Hapus" onclick="confirmDelete({{ $repair->id }}, '{{ $repair->kode_perbaikan }}')"><i class="fas fa-trash"></i></button>
+                                <a href="{{ route('repairs.show', $repair) }}"
+                                   class="btn btn-outline btn-sm btn-icon" title="Lihat detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {{-- Edit: Admin Utama semua laporan;
+                                     Teknisi hanya laporan yang ditanganinya --}}
+                                @if(auth()->user()->isAdminUtama() ||
+                                    (auth()->user()->isTeknisi() &&
+                                     $repair->ditangani_oleh === auth()->id()))
+                                <a href="{{ route('repairs.edit', $repair) }}"
+                                   class="btn btn-outline btn-sm btn-icon" title="Edit">
+                                    <i class="fas fa-pen"></i>
+                                </a>
                                 @endif
+                                {{-- TIDAK ADA tombol hapus — destroy() selalu abort(403)
+                                     Dokumen: "Laporan kerusakan tidak dapat dihapus." --}}
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">
-                            <i class="fas fa-tools" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3;"></i>
-                            Tidak ada data perbaikan
+                        <td colspan="{{ $colCount }}">
+                            <div class="empty-state">
+                                <i class="fas fa-screwdriver-wrench"></i>
+                                <p>
+                                    @if(request()->hasAny(['search', 'status']))
+                                        Tidak ada laporan yang sesuai filter
+                                    @else
+                                        Belum ada laporan perbaikan
+                                    @endif
+                                </p>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+
+        {{-- Pagination — appends() mempertahankan query string --}}
         @if($repairs->hasPages())
-        <div style="padding:14px 20px;border-top:1px solid #f1f5f9;">{{ $repairs->links('vendor.pagination.simple') }}</div>
+        <div class="card-footer">
+            <div class="pagination">
+                {{ $repairs->appends(request()->query())->links() }}
+            </div>
+        </div>
         @endif
     </div>
 </div>
 
-<div class="modal-backdrop" id="deleteModal">
-    <div class="modal confirm-modal">
-        <div class="modal-body" style="padding:28px 24px;text-align:center;">
-            <div class="icon"><i class="fas fa-trash"></i></div>
-            <h3>Hapus Data Perbaikan</h3>
-            <p>Hapus laporan <strong id="deleteItemName"></strong>?</p>
-            <p style="font-size:12px;color:#94a3b8;margin-top:6px;">Tindakan ini tidak dapat dibatalkan.</p>
-            <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
-                <form id="deleteForm" method="POST">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-danger">Ya, Hapus</button>
-                </form>
-                <button class="btn btn-outline" onclick="closeModal('deleteModal')">Batal</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-function confirmDelete(id, name) {
-    document.getElementById('deleteItemName').textContent = name;
-    document.getElementById('deleteForm').action = '/repairs/' + id;
-    openModal('deleteModal');
-}
-</script>
-@endpush
 @endsection

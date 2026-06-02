@@ -25,68 +25,82 @@ class AuthController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
+        // Cari user berdasarkan username (NIS/NIP)
         $user = User::where('username', $request->username)->first();
 
         if (!$user) {
-            return back()->withErrors(['username' => 'Username tidak ditemukan.'])->withInput();
+            return back()
+                ->withErrors(['username' => 'Username tidak ditemukan.'])
+                ->withInput();
         }
+
+        // Akun nonaktif tidak boleh login — status enum: aktif|nonaktif (migration users)
         if ($user->status === 'nonaktif') {
-            return back()->withErrors(['username' => 'Akun Anda belum aktif. Hubungi administrator.'])->withInput();
+            return back()
+                ->withErrors(['username' => 'Akun Anda tidak aktif. Hubungi administrator.'])
+                ->withInput();
         }
+
+        // Verifikasi password
+        // Password di-hash otomatis via cast 'hashed' di User model
         if (!Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['password' => 'Password salah.'])->withInput();
+            return back()
+                ->withErrors(['password' => 'Password salah.'])
+                ->withInput();
         }
 
         Auth::login($user, $request->boolean('remember'));
-        return redirect()->route('dashboard');
+        $request->session()->regenerate();
+
+        // must_change_password adalah boolean field di tabel users, default true
+        if ($user->must_change_password) {
+            return redirect()->route('password.change')
+                ->with('info', 'Anda wajib mengganti password sebelum melanjutkan.');
+        }
+
+        return redirect()->intended(route('dashboard'));
     }
 
-    public function showRegister()
+    /**
+     * Tampilkan form ganti password pertama kali.
+     */
+    public function showChangePassword()
     {
-        // Hanya kirim daftar unit — tidak ada pilihan role, role dikunci ke 'user'
-        $units = ['TK', 'SD', 'SMP', 'SMA', 'MA', 'Pondok Pesantren'];
-        return view('auth.register', compact('units'));
+        // must_change_password accessor boolean di User model
+        if (!Auth::user()->must_change_password) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.change-password');
     }
 
-    public function register(Request $request)
+    public function changePassword(Request $request)
     {
         $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:users,email',
-            'phone'      => 'nullable|string|max:20',
-            'jabatan'    => 'required|string|max:100',
-            'unit_kerja' => 'required|string|max:100',
-            'username'   => 'required|string|min:4|max:50|unique:users,username|regex:/^[a-zA-Z0-9_]+$/',
-            'password'   => 'required|string|min:8|confirmed',
-            'terms'      => 'accepted',
+            'password' => 'required|string|min:8|confirmed',
         ], [
-            'name.required'      => 'Nama lengkap wajib diisi.',
-            'email.required'     => 'Email wajib diisi.',
-            'email.unique'       => 'Email sudah digunakan.',
-            'username.required'  => 'Username wajib diisi.',
-            'username.unique'    => 'Username sudah digunakan.',
-            'username.regex'     => 'Username hanya boleh berisi huruf, angka, dan underscore.',
             'password.min'       => 'Password minimal 8 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'terms.accepted'     => 'Anda harus menyetujui syarat & ketentuan.',
         ]);
 
-        // ── FIX MASALAH 2: Registrasi mandiri SELALU role 'user', nonaktif ──
-        User::create([
-            'name'        => $request->name,
-            'email'       => $request->email,
-            'phone'       => $request->phone,
-            'jabatan'     => $request->jabatan,
-            'unit_kerja'  => $request->unit_kerja,
-            'username'    => $request->username,
-            'password'    => $request->password,
-            'role'        => 'user',       // TERKUNCI — tidak bisa dipilih dari form
-            'status'      => 'nonaktif',   // Harus diaktifkan oleh Super Admin
-            'menu_access' => ['dashboard', 'perbaikan_aset'], // User biasa hanya bisa lapor kerusakan
+        $user = Auth::user();
+
+        // Pastikan password baru berbeda dari password yang sedang aktif
+        // Hash::check diperlukan karena password disimpan dalam bentuk hash
+        if (Hash::check($request->password, $user->password)) {
+            return back()->withErrors([
+                'password' => 'Password baru tidak boleh sama dengan password lama.',
+            ]);
+        }
+
+        // cast 'hashed' di User model akan otomatis meng-hash nilai password
+        $user->update([
+            'password'             => $request->password,
+            'must_change_password' => false,
         ]);
 
-        return redirect()->route('login')
-            ->with('success', 'Akun berhasil dibuat! Tunggu aktivasi dari administrator sebelum dapat login.');
+        return redirect()->route('dashboard')
+            ->with('success', 'Password berhasil diubah. Selamat datang!');
     }
 
     public function logout(Request $request)
@@ -97,8 +111,11 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    public function forgotPassword()
-    {
-        return view('auth.forgot-password');
-    }
+    // TIDAK ADA: showRegister(), register(), forgotPassword()
+    //
+    // Tidak ada registrasi mandiri.
+    // Forgot password tidak tersedia — Admin Utama mereset password pengguna
+    // melalui UserController::update() dengan mengisi field password baru.
+    // Setelah direset, must_change_password otomatis kembali true sehingga
+    // pengguna wajib ganti password di login berikutnya.
 }

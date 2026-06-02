@@ -35,19 +35,27 @@
                     @error('kategori') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Lokasi Barang <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Lokasi Barang</label>
                     <input type="text" name="lokasi_barang" class="form-control {{ $errors->has('lokasi_barang') ? 'is-invalid' : '' }}" placeholder="Contoh: Ruang Kelas 7A" value="{{ old('lokasi_barang') }}">
                     @error('lokasi_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
+                    {{-- unit_id: FK ke tabel units. Admin Utama pilih bebas; Admin Unit dikunci ke unitnya sendiri. --}}
                     <label class="form-label">Unit Kerja <span style="color:#dc2626;">*</span></label>
-                    <select name="unit_kerja" class="form-control {{ $errors->has('unit_kerja') ? 'is-invalid' : '' }}">
+                    <select name="unit_id" class="form-control {{ $errors->has('unit_id') ? 'is-invalid' : '' }}"
+                        {{ auth()->user()->isAdminUnit() ? 'disabled' : '' }}>
                         <option value="">-- Pilih Unit --</option>
                         @foreach($units as $unit)
-                        <option value="{{ $unit }}" {{ (old('unit_kerja', auth()->user()->unit_kerja))==$unit?'selected':'' }}>{{ $unit }}</option>
+                        <option value="{{ $unit->id }}" {{ old('unit_id', auth()->user()->isAdminUnit() ? auth()->user()->unit_id : '') == $unit->id ? 'selected' : '' }}>
+                            {{ $unit->nama_unit }}
+                        </option>
                         @endforeach
                     </select>
-                    @error('unit_kerja') <p class="invalid-feedback">{{ $message }}</p> @enderror
+                    {{-- Jika Admin Unit, kirim unit_id via hidden agar tidak terblokir disabled --}}
+                    @if(auth()->user()->isAdminUnit())
+                    <input type="hidden" name="unit_id" value="{{ auth()->user()->unit_id }}">
+                    @endif
+                    @error('unit_id') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
             </div>
 
@@ -60,22 +68,26 @@
                     @error('jumlah_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Kondisi Barang <span style="color:#dc2626;">*</span></label>
-                    <select name="kondisi_barang" class="form-control {{ $errors->has('kondisi_barang') ? 'is-invalid' : '' }}">
-                        <option value="Baik" {{ old('kondisi_barang','Baik')=='Baik'?'selected':'' }}>Baik</option>
-                        <option value="Rusak Ringan" {{ old('kondisi_barang')=='Rusak Ringan'?'selected':'' }}>Rusak Ringan</option>
-                        <option value="Rusak Berat" {{ old('kondisi_barang')=='Rusak Berat'?'selected':'' }}>Rusak Berat</option>
-                    </select>
-                    @error('kondisi_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Sumber Dana <span style="color:#dc2626;">*</span></label>
-                    <select name="sumber_dana" class="form-control {{ $errors->has('sumber_dana') ? 'is-invalid' : '' }}">
-                        @foreach(['Dana Yayasan','Dana BOS','Hibah','Lainnya'] as $sd)
-                        <option value="{{ $sd }}" {{ old('sumber_dana')==$sd?'selected':'' }}>{{ $sd }}</option>
+                    {{-- Satuan aset — FK ke units_satuan, diisi via seeder, bersifat tetap --}}
+                    <label class="form-label">Satuan</label>
+                    <select name="satuan_id" class="form-control {{ $errors->has('satuan_id') ? 'is-invalid' : '' }}">
+                        <option value="">-- Pilih Satuan --</option>
+                        @foreach($satuanList as $satuan)
+                        <option value="{{ $satuan->id }}" {{ old('satuan_id')==$satuan->id?'selected':'' }}>{{ $satuan->nama_satuan }}</option>
                         @endforeach
                     </select>
-                    @error('sumber_dana') <p class="invalid-feedback">{{ $message }}</p> @enderror
+                    @error('satuan_id') <p class="invalid-feedback">{{ $message }}</p> @enderror
+                </div>
+                <div class="form-group">
+                    {{-- Sumber dana: FK ke funding_sources, dinamis dari DB --}}
+                    <label class="form-label">Sumber Dana</label>
+                    <select name="sumber_dana_id" class="form-control {{ $errors->has('sumber_dana_id') ? 'is-invalid' : '' }}">
+                        <option value="">-- Pilih Sumber Dana --</option>
+                        @foreach($fundingSources as $fs)
+                        <option value="{{ $fs->id }}" {{ old('sumber_dana_id')==$fs->id?'selected':'' }}>{{ $fs->nama_sumber }}</option>
+                        @endforeach
+                    </select>
+                    @error('sumber_dana_id') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
                     <label class="form-label">Harga Barang (Rp) <span style="color:#dc2626;">*</span></label>
@@ -83,15 +95,28 @@
                     @error('harga_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Tanggal Pengadaan <span style="color:#dc2626;">*</span></label>
-                    <input type="date" name="tanggal_pengadaan" class="form-control {{ $errors->has('tanggal_pengadaan') ? 'is-invalid' : '' }}" value="{{ old('tanggal_pengadaan', date('Y-m-d')) }}">
+                    <label class="form-label">Tanggal Pengadaan</label>
+                    <input type="date" name="tanggal_pengadaan" class="form-control {{ $errors->has('tanggal_pengadaan') ? 'is-invalid' : '' }}" value="{{ old('tanggal_pengadaan') }}">
                     @error('tanggal_pengadaan') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
+                    {{-- Multi-foto: name="fotos[]" sesuai AssetController::store() --}}
                     <label class="form-label">Foto Barang</label>
-                    <input type="file" name="foto" class="form-control" accept="image/*">
-                    <p class="form-hint">Format JPG/PNG, maks. 2MB</p>
+                    <input type="file" name="fotos[]" class="form-control" accept="image/jpg,image/jpeg,image/png,image/webp" multiple>
+                    <p class="form-hint">Format JPG/PNG/WEBP, maks. 2MB per foto, hingga 5 foto</p>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Spesifikasi</label>
+                <input type="text" name="spesifikasi" class="form-control {{ $errors->has('spesifikasi') ? 'is-invalid' : '' }}" placeholder="Contoh: RAM 8GB, SSD 512GB" value="{{ old('spesifikasi') }}">
+                @error('spesifikasi') <p class="invalid-feedback">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Dasar / Keterangan Persetujuan</label>
+                <textarea name="keterangan_dasar" class="form-control {{ $errors->has('keterangan_dasar') ? 'is-invalid' : '' }}" rows="2" placeholder="Dasar penambahan atau keterangan persetujuan aset...">{{ old('keterangan_dasar') }}</textarea>
+                @error('keterangan_dasar') <p class="invalid-feedback">{{ $message }}</p> @enderror
             </div>
 
             <div class="form-group">
