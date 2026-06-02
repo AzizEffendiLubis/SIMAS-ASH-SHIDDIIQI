@@ -1,0 +1,391 @@
+
+<?php $__env->startSection('title', 'Edit Pengguna – ' . $user->username); ?>
+<?php $__env->startSection('page-title', 'Manajemen Pengguna'); ?>
+<?php $__env->startSection('page-parent', 'Edit Pengguna'); ?>
+
+<?php $__env->startSection('content'); ?>
+
+
+<div class="page-header-row">
+    <div class="ph-left">
+        <h1>Edit Pengguna</h1>
+        <p>Memperbarui data akun <strong style="color:var(--gray-700);"><?php echo e($user->username); ?></strong></p>
+    </div>
+    <div class="ph-right">
+        <a href="<?php echo e(route('users.show', $user)); ?>" class="btn btn-outline">
+            <i class="fas fa-eye"></i> Detail
+        </a>
+        <a href="<?php echo e(route('users.index')); ?>" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
+</div>
+
+
+<?php if($errors->any()): ?>
+<div class="alert alert-error">
+    <i class="fas fa-triangle-exclamation"></i>
+    <div>
+        <p style="font-weight:700;margin-bottom:4px;">Terdapat kesalahan:</p>
+        <ul style="margin:0;padding-left:16px;">
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li style="font-size:13px;"><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </ul>
+    </div>
+</div>
+<?php endif; ?>
+
+<form action="<?php echo e(route('users.update', $user)); ?>" method="POST">
+    <?php echo csrf_field(); ?>
+    <?php echo method_field('PUT'); ?>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;" class="dash-two-col">
+
+        
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Informasi Akun</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Username (NIS/NIP) <span class="required">*</span>
+                            </label>
+                            <input type="text" name="username"
+                                class="form-control <?php $__errorArgs = ['username'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                value="<?php echo e(old('username', $user->username)); ?>">
+                            <p class="form-hint">Hanya huruf, angka, dan underscore.</p>
+                            <?php $__errorArgs = ['username'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email"
+                                class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                value="<?php echo e(old('email', $user->email)); ?>">
+                            <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                        <div class="form-group col-span-2">
+                            <label class="form-label">
+                                Nama Lengkap <span class="required">*</span>
+                            </label>
+                            <input type="text" name="name"
+                                class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                value="<?php echo e(old('name', $user->name)); ?>">
+                            <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Jabatan</label>
+                            <input type="text" name="jabatan"
+                                class="form-control <?php $__errorArgs = ['jabatan'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                placeholder="Contoh: Waka Sarpras"
+                                value="<?php echo e(old('jabatan', $user->jabatan)); ?>">
+                            <?php $__errorArgs = ['jabatan'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">No. Telepon</label>
+                            <input type="text" name="phone"
+                                class="form-control <?php $__errorArgs = ['phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                placeholder="08xx-xxxx-xxxx"
+                                value="<?php echo e(old('phone', $user->phone)); ?>">
+                            <?php $__errorArgs = ['phone'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Reset Password</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" style="margin-bottom:16px;">
+                        <i class="fas fa-circle-info"></i>
+                        <span>Kosongkan jika tidak ingin mereset password. Jika diisi,
+                            pengguna wajib mengganti password saat login berikutnya.</span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Password Baru</label>
+                            <input type="password" name="password"
+                                class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                placeholder="Kosongkan jika tidak direset">
+                            <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Konfirmasi Password Baru</label>
+                            <input type="password" name="password_confirmation"
+                                class="form-control"
+                                placeholder="Ulangi password baru">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Role &amp; Unit</h2>
+                </div>
+                <div class="card-body">
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Role <span class="required">*</span>
+                        </label>
+                        <select name="role" id="roleSelect"
+                            class="form-control <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                            onchange="handleRoleChange(this.value)">
+                            <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $value => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($value); ?>"
+                                    <?php echo e(old('role', $user->role) === $value ? 'selected' : ''); ?>>
+                                    <?php echo e($label); ?>
+
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                        <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Status <span class="required">*</span>
+                        </label>
+                        <select name="status"
+                            class="form-control <?php $__errorArgs = ['status'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                            <option value="aktif"    <?php echo e(old('status', $user->status) === 'aktif'    ? 'selected' : ''); ?>>Aktif</option>
+                            <option value="nonaktif" <?php echo e(old('status', $user->status) === 'nonaktif' ? 'selected' : ''); ?>>Non-Aktif</option>
+                        </select>
+                        <?php $__errorArgs = ['status'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            Unit Kerja
+                            <span class="required" id="unitRequiredMark" style="display:none;">*</span>
+                        </label>
+                        <select name="unit_id" id="unitSelect"
+                            class="form-control <?php $__errorArgs = ['unit_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                            <option value="">— Pilih Unit —</option>
+                            <?php $__currentLoopData = $units; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $unit): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($unit->id); ?>"
+                                    <?php echo e(old('unit_id', $user->unit_id) == $unit->id ? 'selected' : ''); ?>>
+                                    <?php echo e($unit->nama_unit); ?>
+
+                                    <?php if($unit->kode_unit): ?> (<?php echo e($unit->kode_unit); ?>) <?php endif; ?>
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                        <p class="form-hint" id="unitHint"></p>
+                        <?php $__errorArgs = ['unit_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                    </div>
+
+                </div>
+            </div>
+
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Hak Akses Menu</h2>
+                </div>
+                <div class="card-body">
+                    <div id="menuAccessList" style="display:flex;flex-direction:column;gap:10px;">
+                        <?php $__currentLoopData = $allMenus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $checked = in_array($key, old('menu_access', $user->menu_access ?? [])); ?>
+                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;
+                               color:var(--gray-700);">
+                            <input type="checkbox" name="menu_access[]"
+                                value="<?php echo e($key); ?>"
+                                style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;"
+                                <?php echo e($checked ? 'checked' : ''); ?>>
+                            <?php echo e($label); ?>
+
+                        </label>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <a href="<?php echo e(route('users.show', $user)); ?>" class="btn btn-outline">
+                    <i class="fas fa-xmark"></i> Batal
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-floppy-disk"></i> Simpan Perubahan
+                </button>
+            </div>
+
+        </div>
+    </div>
+</form>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+// Sinkron dengan UserController::unitRule()
+const ROLES_REQUIRE_UNIT = ['user', 'admin_unit'];
+
+function handleRoleChange(role) {
+    const unitSelect = document.getElementById('unitSelect');
+    const unitMark   = document.getElementById('unitRequiredMark');
+    const unitHint   = document.getElementById('unitHint');
+    const required   = ROLES_REQUIRE_UNIT.includes(role);
+
+    unitSelect.required    = required;
+    unitMark.style.display = required ? 'inline' : 'none';
+    unitHint.textContent   = required
+        ? 'Wajib dipilih untuk role ini.'
+        : 'Opsional untuk role ini.';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    handleRoleChange(document.getElementById('roleSelect').value);
+});
+</script>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\laragon\www\SIMAS-ASH-SHIDDIIQI\resources\views/users/edit.blade.php ENDPATH**/ ?>

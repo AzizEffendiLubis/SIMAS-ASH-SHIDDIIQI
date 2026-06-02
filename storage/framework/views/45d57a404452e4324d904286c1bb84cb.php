@@ -1,0 +1,154 @@
+
+<?php $__env->startSection('title', 'Edit Aset'); ?>
+<?php $__env->startSection('page-title', 'Edit Aset'); ?>
+
+<?php $__env->startSection('content'); ?>
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+        <h1>Edit Aset</h1>
+        <p>Perbarui data aset: <strong><?php echo e($asset->nama_barang); ?></strong></p>
+    </div>
+    <a href="<?php echo e(route('assets.show', $asset)); ?>" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Kembali</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="<?php echo e(route('assets.update', $asset)); ?>" method="POST" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
+
+            
+            <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">Informasi Barang <span style="font-weight:400;color:#64748b;text-transform:none;letter-spacing:0;">(tidak dapat diubah)</span></p>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;">
+                <span style="color:#64748b;">Kode Aset:</span>
+                <code style="font-weight:700;color:#1e293b;margin-left:6px;"><?php echo e($asset->kode_aset); ?></code>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Nama Barang</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->nama_barang); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->kategori); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unit Kerja</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->unit->nama_unit ?? '-'); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Jumlah Barang</label>
+                    <input type="number" class="form-control" value="<?php echo e($asset->jumlah_barang); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Harga Barang (Rp)</label>
+                    <input type="number" class="form-control" value="<?php echo e($asset->harga_barang); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tanggal Pengadaan</label>
+                    <input type="date" class="form-control" value="<?php echo e($asset->tanggal_pengadaan?->format('Y-m-d')); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sumber Dana</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->fundingSource->nama_sumber ?? '-'); ?>" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Satuan</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->satuan->nama_satuan ?? '-'); ?>" disabled>
+                </div>
+            </div>
+
+            
+            <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:16px;margin-top:24px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">Data yang Dapat Diperbarui</p>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    
+                    <label class="form-label">Kondisi Barang <span style="color:#dc2626;">*</span></label>
+                    <select name="kondisi_barang" class="form-control <?php echo e($errors->has('kondisi_barang') ? 'is-invalid' : ''); ?>">
+                        <?php $__currentLoopData = ['aktif' => 'Aktif', 'rusak' => 'Rusak', 'hilang' => 'Hilang', 'habis_pakai' => 'Habis Pakai']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($val); ?>" <?php echo e(old('kondisi_barang', $asset->kondisi_barang)==$val?'selected':''); ?>><?php echo e($label); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                    <?php $__errorArgs = ['kondisi_barang'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+
+                <?php if($asset->is_unit_yayasan): ?>
+                
+                <div class="form-group">
+                    <label class="form-label">Lokasi Barang</label>
+                    <input type="text" name="lokasi_barang" class="form-control <?php echo e($errors->has('lokasi_barang') ? 'is-invalid' : ''); ?>" placeholder="Contoh: Ruang Rapat Lantai 2" value="<?php echo e(old('lokasi_barang', $asset->lokasi_barang)); ?>">
+                    <?php $__errorArgs = ['lokasi_barang'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                </div>
+                <?php else: ?>
+                <div class="form-group">
+                    <label class="form-label">Lokasi Barang</label>
+                    <input type="text" class="form-control" value="<?php echo e($asset->lokasi_barang ?? '-'); ?>" disabled>
+                    <p class="form-hint">Lokasi hanya bisa diubah untuk aset unit Yayasan.</p>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Keterangan</label>
+                <textarea name="keterangan" class="form-control" rows="3" placeholder="Catatan tambahan..."><?php echo e(old('keterangan', $asset->keterangan)); ?></textarea>
+            </div>
+
+            
+            <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:16px;margin-top:24px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">Foto Aset</p>
+
+            <?php if($asset->photos->isNotEmpty()): ?>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                <?php $__currentLoopData = $asset->photos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $foto): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div style="position:relative;display:inline-block;">
+                    <img src="<?php echo e(Storage::url($foto->file_path)); ?>" alt="foto aset"
+                         style="height:80px;width:80px;object-fit:cover;border-radius:6px;border:2px solid <?php echo e($foto->is_primary ? '#2563eb' : '#e2e8f0'); ?>;">
+                    <?php if($foto->is_primary): ?>
+                    <span style="position:absolute;top:4px;left:4px;background:#2563eb;color:#fff;font-size:9px;padding:1px 5px;border-radius:4px;">Utama</span>
+                    <?php endif; ?>
+                    <div style="margin-top:4px;display:flex;gap:4px;">
+                        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;">
+                            <input type="radio" name="foto_utama_id" value="<?php echo e($foto->id); ?>" <?php echo e($foto->is_primary?'checked':''); ?>> Utama
+                        </label>
+                        <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer;">
+                            <input type="checkbox" name="hapus_foto[]" value="<?php echo e($foto->id); ?>"> Hapus
+                        </label>
+                    </div>
+                </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </div>
+            <?php else: ?>
+            <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Belum ada foto untuk aset ini.</p>
+            <?php endif; ?>
+
+            <div class="form-group">
+                
+                <label class="form-label">Tambah Foto Baru</label>
+                <input type="file" name="fotos_baru[]" class="form-control" accept="image/jpg,image/jpeg,image/png,image/webp" multiple>
+                <p class="form-hint">Format JPG/PNG/WEBP, maks. 2MB per foto, hingga 5 foto</p>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+                <a href="<?php echo e(route('assets.show', $asset)); ?>" class="btn btn-outline">Batal</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Perubahan</button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\laragon\www\SIMAS-ASH-SHIDDIIQI\resources\views/assets/edit.blade.php ENDPATH**/ ?>
