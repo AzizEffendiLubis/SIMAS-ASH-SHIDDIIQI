@@ -18,6 +18,9 @@ class RepairController extends Controller
     public function index(Request $request)
     {
         $user  = Auth::user();
+
+        // with(['pelapor', 'asset', 'teknisi']) — pelapor & asset dibutuhkan
+        // oleh scopeForUser (whereHas) dan ditampilkan di tabel.
         $query = Repair::forUser($user)->with(['pelapor', 'asset', 'teknisi']);
 
         if ($request->filled('search')) {
@@ -147,6 +150,24 @@ class RepairController extends Controller
     public function show(Repair $repair)
     {
         $user = Auth::user();
+
+        // Otorisasi manual: pastikan user berhak melihat laporan ini
+        // Gunakan logika yang sama dengan scopeForUser
+        if (!$user->isAdminUtama() && !$user->isTeknisi() && !$user->isKepalaYayasan()) {
+            if ($user->unit_id) {
+                $repair->loadMissing(['pelapor', 'asset']);
+                $boleh = ($repair->pelapor && $repair->pelapor->unit_id === $user->unit_id)
+                      || ($repair->asset   && $repair->asset->unit_id   === $user->unit_id);
+                if (!$boleh) {
+                    abort(403, 'Anda tidak memiliki akses ke laporan ini.');
+                }
+            } else {
+                // Tanpa unit_id: hanya boleh lihat milik sendiri
+                if ($repair->dilaporkan_oleh !== $user->id) {
+                    abort(403, 'Anda tidak memiliki akses ke laporan ini.');
+                }
+            }
+        }
 
         $repair->load(['pelapor.unit', 'asset.unit', 'photos']);
 

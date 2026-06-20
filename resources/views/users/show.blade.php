@@ -190,35 +190,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Aksi Cepat --}}
-        @if($user->id !== auth()->id())
-        <div class="card">
-            <div class="card-body">
-                <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-                    color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">
-                    Aksi Cepat
-                </p>
-                <div style="display:flex;flex-direction:column;gap:8px;">
-                    <a href="{{ route('users.edit', $user) }}" class="btn btn-outline" style="width:100%;justify-content:center;">
-                        <i class="fas fa-pen"></i> Edit Data
-                    </a>
-                    @if($user->status === 'aktif')
-                    <button class="btn btn-outline" style="width:100%;justify-content:center;color:#dc2626;"
-                        onclick="confirmNonaktif({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ addslashes($user->username) }}', '{{ $user->role }}', {{ $user->unit_id ?? 'null' }}, @json($user->menu_access ?? []))">
-                        <i class="fas fa-user-slash"></i> Nonaktifkan
-                    </button>
-                    @else
-                    <a href="{{ route('users.edit', $user) }}" class="btn btn-outline"
-                        style="width:100%;justify-content:center;color:#16a34a;">
-                        <i class="fas fa-user-check"></i> Aktifkan Kembali
-                    </a>
-                    @endif
-                </div>
-            </div>
-        </div>
-        @endif
-
     </div>
 </div>
 

@@ -107,14 +107,35 @@ class Repair extends Model
 
     /**
      * Filter laporan berdasarkan hak akses pengguna.
-     * - Admin Utama, Teknisi, Kepala Yayasan: lihat semua
-     * - Admin Unit, User: hanya laporan milik sendiri
+     *
+     * - Admin Utama, Teknisi, Kepala Yayasan : lihat semua laporan lintas unit
+     * - Admin Unit, User (punya unit_id)      : lihat laporan yang:
+     *     (a) dilaporkan oleh pengguna di unit yang sama, ATAU
+     *     (b) terkait aset yang berada di unit yang sama
+     * - User tanpa unit_id (edge-case)        : hanya laporan milik sendiri
      */
     public function scopeForUser($query, User $user)
     {
+        // Peran dengan akses penuh — tidak perlu filter
         if ($user->isAdminUtama() || $user->isTeknisi() || $user->isKepalaYayasan()) {
             return $query;
         }
+
+        // Admin Unit & User biasa yang memiliki unit_id
+        if ($user->unit_id) {
+            return $query->where(function ($q) use ($user) {
+                // (a) Pelapor berasal dari unit yang sama
+                $q->whereHas('pelapor', function ($q2) use ($user) {
+                    $q2->where('unit_id', $user->unit_id);
+                })
+                // (b) Atau aset terkait berasal dari unit yang sama
+                ->orWhereHas('asset', function ($q2) use ($user) {
+                    $q2->where('unit_id', $user->unit_id);
+                });
+            });
+        }
+
+        // Fallback: tidak punya unit_id → hanya milik sendiri
         return $query->where('dilaporkan_oleh', $user->id);
     }
 }
