@@ -54,6 +54,7 @@ return new class extends Migration
                 'pending',
                 'sedang_diperbaiki',
                 'selesai',
+                'tidak_dapat_diperbaiki'
             ])->default('pending');
  
             // Catatan tindakan teknisi — diisi saat update progres.

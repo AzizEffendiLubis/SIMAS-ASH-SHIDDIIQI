@@ -48,6 +48,7 @@ class Repair extends Model
             'pending'           => 'Menunggu',
             'sedang_diperbaiki' => 'Sedang Diperbaiki',
             'selesai'           => 'Selesai',
+            'tidak_dapat_diperbaiki' => 'Tidak Dapat Diperbaiki',
             default             => ucfirst($this->status),
         };
     }
@@ -58,6 +59,7 @@ class Repair extends Model
             'pending'           => 'badge-warning',
             'sedang_diperbaiki' => 'badge-info',
             'selesai'           => 'badge-success',
+            'tidak_dapat_diperbaiki' => 'badge-danger',
             default             => 'badge-default',
         };
     }

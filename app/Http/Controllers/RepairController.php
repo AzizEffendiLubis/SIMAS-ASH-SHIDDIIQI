@@ -19,8 +19,6 @@ class RepairController extends Controller
     {
         $user  = Auth::user();
 
-        // with(['pelapor', 'asset', 'teknisi']) — pelapor & asset dibutuhkan
-        // oleh scopeForUser (whereHas) dan ditampilkan di tabel.
         $query = Repair::forUser($user)->with(['pelapor', 'asset', 'teknisi']);
 
         if ($request->filled('search')) {
@@ -48,12 +46,17 @@ class RepairController extends Controller
     {
         $user = Auth::user();
 
-        // Aset untuk autocomplete — difilter per unit/role.
-        // Admin Unit & User: hanya aset di unit mereka (unit_id = $user->unit_id).
-        // Admin Utama & Kepala Yayasan: semua aset lintas unit.
-        // Hanya kondisi aktif & rusak — tidak masuk akal lapor aset hilang/habis_pakai.
+        // Hanya aset dengan kondisi 'aktif' yang boleh dilaporkan.
+        // Kondisi rusak/hilang/habis_pakai tidak bisa dilaporkan kerusakan.
+        // Aset yang sudah ada laporan aktif (pending/sedang_diperbaiki) juga dikecualikan.
+        $asetSudahDilaporkan = Repair::whereIn('status', ['pending', 'sedang_diperbaiki', 'tidak_dapat_diperbaiki'])
+            ->whereNotNull('asset_id')
+            ->pluck('asset_id')
+            ->toArray();
+
         $assetsQuery = Asset::orderBy('nama_barang')
-            ->whereIn('kondisi_barang', ['aktif', 'rusak']);
+            ->where('kondisi_barang', 'aktif')
+            ->whereNotIn('id', $asetSudahDilaporkan);
 
         if ($user->unit_id && !$user->isAdminUtama() && !$user->isKepalaYayasan()) {
             $assetsQuery->where('unit_id', $user->unit_id);
@@ -71,8 +74,8 @@ class RepairController extends Controller
             'nama_aset_laporan'   => 'required|string|max:255',
 
             // Opsional — diisi JS hanya jika pengguna pilih dari saran autocomplete.
-            // Kosong = laporan manual tanpa keterkaitan ke aset terdaftar.
-            'asset_id'            => 'nullable|exists:assets,id',
+            // Kosong = laporan harus dari aset terdaftar.
+            'asset_id'            => 'required|exists:assets,id',
 
             'deskripsi_kerusakan' => 'required|string',
             'lokasi_kerusakan'    => 'nullable|string|max:255',
@@ -80,16 +83,41 @@ class RepairController extends Controller
             'fotos.*'             => 'image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        // Double-check server-side: pastikan asset_id yang dikirim memang
-        // dari unit pengguna (tidak bisa di-bypass dari luar autocomplete UI)
         if (!empty($validated['asset_id'])) {
             $user  = Auth::user();
             $asset = Asset::findOrFail($validated['asset_id']);
 
+            // Validasi unit — user biasa hanya boleh lapor aset unitnya sendiri
             if ($user->unit_id && !$user->isAdminUtama() && !$user->isKepalaYayasan()) {
                 if ($asset->unit_id !== $user->unit_id) {
                     abort(403, 'Anda hanya dapat melaporkan aset dari unit Anda sendiri.');
                 }
+            }
+
+            // Validasi kondisi aset — hanya kondisi 'aktif' yang boleh dilaporkan
+            $kondisiTidakBoleh = ['rusak', 'hilang', 'habis_pakai'];
+            if (in_array($asset->kondisi_barang, $kondisiTidakBoleh)) {
+                $labelKondisi = [
+                    'rusak'       => 'Rusak',
+                    'hilang'      => 'Hilang',
+                    'habis_pakai' => 'Habis Pakai',
+                ];
+                $labelTampil = $labelKondisi[$asset->kondisi_barang] ?? $asset->kondisi_barang;
+
+                return back()->withInput()->withErrors([
+                    'asset_id' => "Aset '{$asset->nama_barang}' tidak dapat dilaporkan karena kondisinya saat ini: {$labelTampil}.",
+                ]);
+            }
+
+            // Validasi laporan aktif — aset tidak boleh dilaporkan dua kali sebelum selesai
+            $laporanAktif = Repair::where('asset_id', $asset->id)
+                ->whereIn('status', ['pending', 'sedang_diperbaiki', 'tidak_dapat_diperbaiki'])
+                ->exists();
+
+            if ($laporanAktif) {
+                return back()->withInput()->withErrors([
+                    'asset_id' => "Aset '{$asset->nama_barang}' sudah memiliki laporan kerusakan yang sedang diproses atau dinyatakan tidak dapat diperbaiki.",
+                ]);
             }
 
             // Auto-isi lokasi dari aset jika tidak diisi manual
@@ -152,7 +180,6 @@ class RepairController extends Controller
         $user = Auth::user();
 
         // Otorisasi manual: pastikan user berhak melihat laporan ini
-        // Gunakan logika yang sama dengan scopeForUser
         if (!$user->isAdminUtama() && !$user->isTeknisi() && !$user->isKepalaYayasan()) {
             if ($user->unit_id) {
                 $repair->loadMissing(['pelapor', 'asset']);
@@ -162,7 +189,6 @@ class RepairController extends Controller
                     abort(403, 'Anda tidak memiliki akses ke laporan ini.');
                 }
             } else {
-                // Tanpa unit_id: hanya boleh lihat milik sendiri
                 if ($repair->dilaporkan_oleh !== $user->id) {
                     abort(403, 'Anda tidak memiliki akses ke laporan ini.');
                 }
@@ -171,7 +197,6 @@ class RepairController extends Controller
 
         $repair->load(['pelapor.unit', 'asset.unit', 'photos']);
 
-        // Teknisi hanya dimuat untuk Admin Utama dan Teknisi yang menangani
         $showTeknisi = $user->isAdminUtama() || $user->isTeknisi();
         if ($showTeknisi) {
             $repair->load('teknisi');
@@ -200,7 +225,6 @@ class RepairController extends Controller
                 ->get();
         }
 
-        // "FK opsional ke assets — bisa dikaitkan admin setelah verifikasi."
         $assets = null;
         if ($user->isAdminUtama()) {
             $assets = Asset::orderBy('nama_barang')->get(['id', 'nama_barang', 'kode_aset']);
@@ -263,7 +287,7 @@ class RepairController extends Controller
                     'nama_aset_laporan'   => 'required|string|max:255',
                     'deskripsi_kerusakan' => 'required|string',
                     'lokasi_kerusakan'    => 'nullable|string|max:255',
-                    'status'              => 'required|in:pending,sedang_diperbaiki,selesai',
+                    'status'              => 'required|in:pending,sedang_diperbaiki,selesai,tidak_dapat_diperbaiki',
                     'tindakan_perbaikan'  => 'nullable|string',
                     'biaya_perbaikan'     => 'nullable|numeric|min:0',
                     'ditangani_oleh'      => [

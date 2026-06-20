@@ -171,6 +171,10 @@
                                 {{ old('status', $repair->status) === 'selesai' ? 'selected' : '' }}>
                                 Selesai
                             </option>
+                            <option value="tidak_dapat_diperbaiki"
+                                {{ old('status', $repair->status) === 'tidak_dapat_diperbaiki' ? 'selected' : '' }}>
+                                Tidak Dapat Diperbaiki
+                            </option>
                         </select>
                         @error('status')
                         <p class="invalid-feedback">{{ $message }}</p>

@@ -35,12 +35,12 @@
 
 <div class="card" style="max-width:740px;">
     <div class="card-body">
-        <form action="<?php echo e(route('repairs.store')); ?>" method="POST" enctype="multipart/form-data">
+        <form action="<?php echo e(route('repairs.store')); ?>" method="POST" enctype="multipart/form-data" id="repairForm">
             <?php echo csrf_field(); ?>
 
             
-            <input type="hidden" name="asset_id"  id="inputAssetId"  value="<?php echo e(old('asset_id')); ?>">
-            <input type="hidden" name="mode"       id="inputMode"     value="<?php echo e(old('mode', 'manual')); ?>">
+            <input type="hidden" name="asset_id"          id="inputAssetId"   value="<?php echo e(old('asset_id')); ?>">
+            <input type="hidden" name="nama_aset_laporan" id="inputNamaHidden" value="<?php echo e(old('nama_aset_laporan')); ?>">
 
             
             <div class="form-section">
@@ -50,13 +50,14 @@
 
                 
                 <div class="form-group" style="position:relative;">
-                    <label class="form-label">
+                    <label class="form-label" for="inputNamaAset">
                         Nama Barang yang Rusak <span class="required">*</span>
                     </label>
-                    <div class="input-wrap">
+
+                    
+                    <div class="input-wrap" style="position:relative;">
                         <i class="input-icon fas fa-box-open"></i>
                         <input type="text"
-                            name="nama_aset_laporan"
                             id="inputNamaAset"
                             class="form-control <?php $__errorArgs = ['nama_aset_laporan'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -65,17 +66,40 @@ if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
+unset($__errorArgs, $__bag); ?> <?php $__errorArgs = ['asset_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
 unset($__errorArgs, $__bag); ?>"
-                            placeholder="Ketik nama barang atau pilih dari daftar aset..."
+                            placeholder="Ketik nama atau kode aset..."
                             value="<?php echo e(old('nama_aset_laporan')); ?>"
                             autocomplete="off"
-                            autofocus>
+                            autofocus
+                            aria-autocomplete="list"
+                            aria-controls="assetSuggestions"
+                            aria-expanded="false">
+                        
+                        <span id="statusIcon" style="
+                            position:absolute;right:12px;top:50%;transform:translateY(-50%);
+                            font-size:14px;pointer-events:none;display:none;">
+                        </span>
                     </div>
+
                     <p class="form-hint" id="namaHint">
-                        Tulis nama barang sedetail mungkin. Saran akan muncul jika barang terdaftar
+                        <i class="fas fa-circle-info" style="color:var(--gray-300);margin-right:3px;"></i>
+                        Ketik minimal 1 huruf — aset yang berawalan huruf tersebut akan muncul. Wajib pilih dari daftar.
                         <?php if(auth()->user()->unit_id && !auth()->user()->isAdminUtama() && !auth()->user()->isKepalaYayasan()): ?>
-                            di unit <strong><?php echo e(auth()->user()->unit->nama_unit); ?></strong>
+                            &nbsp;Menampilkan aset unit <strong><?php echo e(auth()->user()->unit->nama_unit); ?></strong>.
                         <?php endif; ?>
+                    </p>
+
+                    
+                    <p id="dropdownError" style="display:none;color:var(--danger,#dc3545);font-size:12.5px;margin-top:4px;">
+                        <i class="fas fa-circle-exclamation" style="margin-right:3px;"></i>
+                        Pilih barang dari daftar saran — tidak bisa diisi manual.
                     </p>
                     <?php $__errorArgs = ['nama_aset_laporan'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -85,45 +109,60 @@ $message = $__bag->first($__errorArgs[0]); ?> <p class="invalid-feedback"><?php 
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
+                    <?php $__errorArgs = ['asset_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>          <p class="invalid-feedback"><?php echo e($message); ?></p> <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
 
                     
-                    <div id="assetSuggestions" style="
-                        display:none;
-                        position:absolute;
-                        top:100%; left:0; right:0;
-                        background:#fff;
-                        border:1.5px solid var(--primary);
-                        border-top:none;
-                        border-radius:0 0 var(--radius-sm) var(--radius-sm);
-                        box-shadow:var(--shadow);
-                        z-index:50;
-                        max-height:220px;
-                        overflow-y:auto;">
+                    <div id="assetSuggestions"
+                         role="listbox"
+                         style="
+                            display:none;
+                            position:absolute;
+                            top:100%; left:0; right:0;
+                            background:#fff;
+                            border:1.5px solid var(--primary);
+                            border-top:none;
+                            border-radius:0 0 var(--radius-sm) var(--radius-sm);
+                            box-shadow:var(--shadow);
+                            z-index:50;
+                            max-height:240px;
+                            overflow-y:auto;">
                     </div>
                 </div>
 
                 
-                <div id="assetPreview" style="display:none;
-                    background:var(--primary-xlight);border:1px solid var(--primary-light);
-                    border-radius:var(--radius-sm);padding:11px 14px;
-                    margin-top:-10px;margin-bottom:16px;
-                    display:none;align-items:center;gap:10px;">
+                <div id="assetPreview" style="
+                    display:none;
+                    background:var(--primary-xlight);
+                    border:1px solid var(--primary-light);
+                    border-radius:var(--radius-sm);
+                    padding:11px 14px;
+                    margin-top:-10px;
+                    margin-bottom:16px;
+                    align-items:center;
+                    gap:10px;">
                     <i class="fas fa-circle-check" style="color:var(--primary);font-size:16px;flex-shrink:0;"></i>
-                    <div style="min-width:0;">
-                        <p style="font-size:12px;color:var(--primary);font-weight:700;">Aset terdaftar dipilih</p>
-                        <p id="previewDetail" style="font-size:12.5px;color:var(--gray-600);margin-top:1px;"></p>
+                    <div style="min-width:0;flex:1;">
+                        <p style="font-size:12px;color:var(--primary);font-weight:700;margin:0 0 1px;">Aset terdaftar dipilih</p>
+                        <p id="previewDetail" style="font-size:12.5px;color:var(--gray-600);margin:0;"></p>
                     </div>
                     <button type="button" onclick="clearAsset()"
                         style="margin-left:auto;background:none;border:none;cursor:pointer;
-                               color:var(--gray-400);font-size:13px;flex-shrink:0;"
-                        title="Hapus pilihan, tulis manual">
-                        <i class="fas fa-xmark"></i>
+                               color:var(--gray-400);font-size:13px;flex-shrink:0;padding:0;"
+                        title="Ganti pilihan">
+                        <i class="fas fa-pen-to-square"></i> Ganti
                     </button>
                 </div>
 
                 
                 <div class="form-group">
-                    <label class="form-label">Lokasi Kerusakan</label>
+                    <label class="form-label" for="inputLokasi">Lokasi Kerusakan</label>
                     <div class="input-wrap">
                         <i class="input-icon fas fa-location-dot"></i>
                         <input type="text" name="lokasi_kerusakan" id="inputLokasi"
@@ -156,10 +195,10 @@ unset($__errorArgs, $__bag); ?>
                 </p>
 
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="deskripsiKerusakan">
                         Deskripsi Kerusakan <span class="required">*</span>
                     </label>
-                    <textarea name="deskripsi_kerusakan" rows="4"
+                    <textarea name="deskripsi_kerusakan" id="deskripsiKerusakan" rows="4"
                         class="form-control <?php $__errorArgs = ['deskripsi_kerusakan'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -179,12 +218,11 @@ endif;
 unset($__errorArgs, $__bag); ?>
                 </div>
 
-                
                 <div class="form-group">
-                    <label class="form-label">
+                    <label class="form-label" for="fotoInput">
                         Foto Kerusakan <span class="required">*</span>
                     </label>
-                    <input type="file" name="fotos[]"
+                    <input type="file" name="fotos[]" id="fotoInput"
                         class="form-control <?php $__errorArgs = ['fotos'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -205,7 +243,7 @@ unset($__errorArgs, $__bag); ?>"
                         required>
                     <p class="form-hint">
                         <i class="fas fa-circle-info" style="color:var(--gray-300);margin-right:3px;"></i>
-                        Wajib diisi &middot; Format JPG / PNG / WEBP &middot; Maks. 2 MB per foto &middot; Hingga 5 foto &middot; Wajib minimal 1 foto
+                        Wajib diisi &middot; Format JPG / PNG / WEBP &middot; Maks. 2 MB per foto &middot; Hingga 5 foto
                     </p>
                     <?php $__errorArgs = ['fotos'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -231,7 +269,7 @@ unset($__errorArgs, $__bag); ?>
                 <a href="<?php echo e(route('repairs.index')); ?>" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" id="btnSubmit">
                     <i class="fas fa-paper-plane"></i> Kirim Laporan
                 </button>
             </div>
@@ -242,159 +280,252 @@ unset($__errorArgs, $__bag); ?>
 
 <?php $__env->startPush('scripts'); ?>
 <?php
-// Siapkan data di PHP agar tidak konflik dengan Blade parser
-// (fn() => [...] di dalam @json() menyebabkan 'Unclosed [' parse error)
-$assetsForJs = $assets->map(function ($a) {
-    return [
-        'id'     => $a->id,
-        'nama'   => $a->nama_barang,
-        'kode'   => $a->kode_aset,
-        'lokasi' => $a->lokasi_barang ?? '',
-    ];
-})->values()->toArray();
+$assetsForJs = $assets->map(fn($a) => [
+    'id'     => $a->id,
+    'nama'   => $a->nama_barang,
+    'kode'   => $a->kode_aset,
+    'lokasi' => $a->lokasi_barang ?? '',
+])->values()->toArray();
 ?>
 <script>
-// Data aset dari controller, difilter per unit di RepairController::create()
+// ─── Data aset dari controller (sudah difilter per unit & kondisi) ────────
 const ASSETS = <?php echo json_encode($assetsForJs, 15, 512) ?>;
 
-// ── Elemen ───────────────────────────────────────────────────────────────
-const inputNama   = document.getElementById('inputNamaAset');
-const inputAsset  = document.getElementById('inputAssetId');
-const inputMode   = document.getElementById('inputMode');
-const inputLokasi = document.getElementById('inputLokasi');
-const suggestions = document.getElementById('assetSuggestions');
-const preview     = document.getElementById('assetPreview');
+// ─── Elemen ───────────────────────────────────────────────────────────────
+const inputNama     = document.getElementById('inputNamaAset');
+const inputAssetId  = document.getElementById('inputAssetId');
+const inputNamaHid  = document.getElementById('inputNamaHidden');
+const inputLokasi   = document.getElementById('inputLokasi');
+const suggestions   = document.getElementById('assetSuggestions');
+const preview       = document.getElementById('assetPreview');
 const previewDetail = document.getElementById('previewDetail');
+const statusIcon    = document.getElementById('statusIcon');
+const dropdownError = document.getElementById('dropdownError');
+const form          = document.getElementById('repairForm');
 
-// ── Tampilkan saran sesuai teks yang diketik ─────────────────────────────
+// ─── State: apakah sudah pilih dari dropdown ──────────────────────────────
+let assetTerpilih = false;
+
+// ─── Helper: escape HTML ──────────────────────────────────────────────────
+function escHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+// ─── Sembunyikan saran ────────────────────────────────────────────────────
+function hideSuggestions() {
+    suggestions.style.display = 'none';
+    suggestions.innerHTML     = '';
+    inputNama.setAttribute('aria-expanded', 'false');
+}
+
+// ─── Update ikon status di kanan input ────────────────────────────────────
+function updateStatusIcon() {
+    statusIcon.style.display = inputNama.value.trim() ? 'block' : 'none';
+    if (assetTerpilih) {
+        statusIcon.innerHTML = '<i class="fas fa-circle-check" style="color:var(--primary);"></i>';
+    } else if (inputNama.value.trim()) {
+        statusIcon.innerHTML = '<i class="fas fa-circle-exclamation" style="color:var(--warning,#f59e0b);"></i>';
+    }
+}
+
+// ─── Tampilkan saran: filter starts-with nama atau kode ──────────────────
 inputNama.addEventListener('input', function () {
     const q = this.value.trim().toLowerCase();
 
-    // Reset asset_id dan mode jika pengguna mengubah teks setelah pilih
-    inputAsset.value = '';
-    inputMode.value  = 'manual';
-    preview.style.display = 'none';
+    // Reset pilihan jika pengguna ubah teks setelah pilih
+    if (assetTerpilih) {
+        assetTerpilih         = false;
+        inputAssetId.value    = '';
+        inputNamaHid.value    = '';
+        preview.style.display = 'none';
+        dropdownError.style.display = 'none';
+    }
+
+    updateStatusIcon();
 
     if (q.length < 1) { hideSuggestions(); return; }
 
+    // Filter: nama atau kode DIAWALI dengan huruf yang diketik
     const matches = ASSETS.filter(a =>
-        a.nama.toLowerCase().includes(q) ||
-        a.kode.toLowerCase().includes(q)
-    ).slice(0, 8); // max 8 saran
+        a.nama.toLowerCase().startsWith(q) ||
+        a.kode.toLowerCase().startsWith(q)
+    ).slice(0, 10);
 
-    if (!matches.length) { hideSuggestions(); return; }
+    if (!matches.length) {
+        suggestions.innerHTML = `
+            <div style="padding:12px 14px;font-size:13px;color:var(--gray-400);text-align:center;">
+                <i class="fas fa-magnifying-glass" style="margin-right:5px;"></i>
+                Tidak ada aset yang berawalan "<strong>${escHtml(this.value.trim())}</strong>"
+            </div>`;
+        suggestions.style.display = 'block';
+        inputNama.setAttribute('aria-expanded', 'true');
+        return;
+    }
 
-    suggestions.innerHTML = matches.map(a => `
+    suggestions.innerHTML = matches.map((a, i) => `
         <div class="suggestion-item"
-             data-id="<?php echo e(''); ?>"
+             role="option"
+             tabindex="-1"
              data-real-id="${a.id}"
              data-nama="${escHtml(a.nama)}"
              data-kode="${escHtml(a.kode)}"
              data-lokasi="${escHtml(a.lokasi)}"
              onclick="selectAsset(this)"
              style="padding:10px 14px;cursor:pointer;font-size:13.5px;
-                    border-bottom:1px solid var(--gray-100);">
-            <span style="font-weight:600;color:var(--gray-800);">${escHtml(a.nama)}</span>
-            <span style="font-size:12px;color:var(--gray-400);margin-left:6px;">${escHtml(a.kode)}</span>
-            ${a.lokasi ? `<br><span style="font-size:12px;color:var(--gray-400);">
-                <i class="fas fa-location-dot" style="font-size:10px;"></i> ${escHtml(a.lokasi)}
-            </span>` : ''}
+                    border-bottom:1px solid var(--gray-100);
+                    ${i === matches.length - 1 ? 'border-bottom:none;' : ''}">
+            <div style="display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-box" style="color:var(--primary);font-size:12px;flex-shrink:0;"></i>
+                <span style="font-weight:600;color:var(--gray-800);">${escHtml(a.nama)}</span>
+                <span style="font-size:11.5px;color:var(--gray-400);background:var(--gray-100);
+                             padding:1px 6px;border-radius:4px;margin-left:auto;flex-shrink:0;">
+                    ${escHtml(a.kode)}
+                </span>
+            </div>
+            ${a.lokasi ? `
+            <div style="font-size:11.5px;color:var(--gray-400);margin-top:3px;padding-left:18px;">
+                <i class="fas fa-location-dot" style="font-size:10px;margin-right:3px;"></i>${escHtml(a.lokasi)}
+            </div>` : ''}
         </div>
     `).join('');
 
     suggestions.style.display = 'block';
+    inputNama.setAttribute('aria-expanded', 'true');
 });
 
-// ── Pilih aset dari saran ─────────────────────────────────────────────────
+// ─── Pilih aset dari saran ────────────────────────────────────────────────
 function selectAsset(el) {
     const id     = el.getAttribute('data-real-id');
     const nama   = el.getAttribute('data-nama');
     const kode   = el.getAttribute('data-kode');
     const lokasi = el.getAttribute('data-lokasi');
 
-    inputNama.value  = nama;
-    inputAsset.value = id;
-    inputMode.value  = 'dropdown';
+    // Isi hidden inputs
+    inputAssetId.value = id;
+    inputNamaHid.value = nama;
+
+    // Tampilkan nama di input teks (read-only setelah pilih)
+    inputNama.value = nama;
 
     // Auto-isi lokasi jika masih kosong
     if (!inputLokasi.value && lokasi) {
         inputLokasi.value = lokasi;
     }
 
-    // Tampilkan preview
-    previewDetail.textContent = kode + (lokasi ? ' · ' + lokasi : '');
-    preview.style.display = 'flex';
+    // Tandai sudah terpilih
+    assetTerpilih = true;
 
+    // Sembunyikan error, tampilkan preview
+    dropdownError.style.display = 'none';
+    previewDetail.textContent   = kode + (lokasi ? ' · ' + lokasi : '');
+    preview.style.display       = 'flex';
+
+    updateStatusIcon();
     hideSuggestions();
     inputNama.focus();
 }
 
-// ── Hapus pilihan aset (kembali ke tulis manual) ──────────────────────────
+// ─── Hapus pilihan — pengguna bisa cari ulang ────────────────────────────
 function clearAsset() {
-    inputAsset.value = '';
-    inputMode.value  = 'manual';
-    inputNama.value  = '';
-    inputLokasi.value = '';
+    assetTerpilih         = false;
+    inputAssetId.value    = '';
+    inputNamaHid.value    = '';
+    inputNama.value       = '';
+    inputLokasi.value     = '';
     preview.style.display = 'none';
+    dropdownError.style.display = 'none';
+    updateStatusIcon();
     inputNama.focus();
 }
 
-// ── Sembunyikan saran ─────────────────────────────────────────────────────
-function hideSuggestions() {
-    suggestions.style.display = 'none';
-    suggestions.innerHTML = '';
-}
+// ─── Validasi submit: asset_id wajib terisi ───────────────────────────────
+form.addEventListener('submit', function (e) {
+    if (!inputAssetId.value) {
+        e.preventDefault();
+        dropdownError.style.display = 'block';
+        inputNama.focus();
 
-// Tutup saran jika klik di luar
+        // Scroll ke error
+        dropdownError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// ─── Tutup saran jika klik di luar ───────────────────────────────────────
 document.addEventListener('click', function (e) {
     if (!inputNama.contains(e.target) && !suggestions.contains(e.target)) {
         hideSuggestions();
     }
 });
 
-// Navigasi keyboard: Escape menutup saran
+// ─── Navigasi keyboard ────────────────────────────────────────────────────
 inputNama.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') hideSuggestions();
+    if (e.key === 'Escape') {
+        hideSuggestions();
+        return;
+    }
+
+    if (e.key === 'ArrowDown' && suggestions.style.display !== 'none') {
+        e.preventDefault();
+        const first = suggestions.querySelector('.suggestion-item');
+        if (first) first.focus();
+        return;
+    }
 });
 
-// Hover styling saran
-document.addEventListener('mouseover', function (e) {
+// Navigasi antar item saran dengan arrow key
+suggestions.addEventListener('keydown', function (e) {
+    const items = [...suggestions.querySelectorAll('.suggestion-item')];
+    const idx   = items.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (idx < items.length - 1) items[idx + 1].focus();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (idx > 0) items[idx - 1].focus();
+        else inputNama.focus();
+    } else if (e.key === 'Enter' && idx >= 0) {
+        e.preventDefault();
+        selectAsset(items[idx]);
+    } else if (e.key === 'Escape') {
+        hideSuggestions();
+        inputNama.focus();
+    }
+});
+
+// ─── Hover styling saran ──────────────────────────────────────────────────
+suggestions.addEventListener('mouseover', function (e) {
     const item = e.target.closest('.suggestion-item');
-    if (item && suggestions.contains(item)) {
+    if (item) {
         suggestions.querySelectorAll('.suggestion-item').forEach(el =>
             el.style.background = '');
         item.style.background = 'var(--primary-xlight)';
     }
 });
-document.addEventListener('mouseout', function (e) {
+suggestions.addEventListener('mouseout', function (e) {
     const item = e.target.closest('.suggestion-item');
-    if (item && suggestions.contains(item)) {
-        item.style.background = '';
-    }
+    if (item) item.style.background = '';
 });
 
-// Helper escape HTML
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;');
-}
-
-// ── Init: pulihkan state setelah validasi gagal (old values) ─────────────
+// ─── Init: pulihkan state setelah validasi gagal (old values) ────────────
 document.addEventListener('DOMContentLoaded', function () {
     const oldAssetId = '<?php echo e(old('asset_id')); ?>';
     const oldNama    = '<?php echo e(old('nama_aset_laporan')); ?>';
 
     if (oldAssetId && oldNama) {
-        // Cari data aset dari array
         const found = ASSETS.find(a => String(a.id) === String(oldAssetId));
         if (found) {
-            inputAsset.value = found.id;
-            inputMode.value  = 'dropdown';
+            inputAssetId.value = found.id;
+            inputNamaHid.value = found.nama;
+            inputNama.value    = found.nama;
+            assetTerpilih      = true;
             previewDetail.textContent = found.kode + (found.lokasi ? ' · ' + found.lokasi : '');
-            preview.style.display = 'flex';
+            preview.style.display    = 'flex';
+            updateStatusIcon();
         }
     }
 });

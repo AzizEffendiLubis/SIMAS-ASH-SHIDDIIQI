@@ -181,6 +181,10 @@ unset($__errorArgs, $__bag); ?>
                                 <?php echo e(old('status', $repair->status) === 'selesai' ? 'selected' : ''); ?>>
                                 Selesai
                             </option>
+                            <option value="tidak_dapat_diperbaiki"
+                                <?php echo e(old('status', $repair->status) === 'tidak_dapat_diperbaiki' ? 'selected' : ''); ?>>
+                                Tidak Dapat Diperbaiki
+                            </option>
                         </select>
                         <?php $__errorArgs = ['status'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
