@@ -12,12 +12,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
 
     // Redirect root ke halaman login
-    Route::get('/', fn() => redirect()->route('login'));
+    Route::get('/', fn() => view('welcome'))->name('welcome');
 
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-    // TIDAK ADA: register, password.request
 });
 
 Route::middleware('auth')->group(function () {
