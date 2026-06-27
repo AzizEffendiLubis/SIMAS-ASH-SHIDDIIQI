@@ -99,7 +99,7 @@ class AssetController extends Controller
             'jumlah_barang'     => 'required|integer|min:1',
             'satuan_id'         => 'nullable|exists:units_satuan,id',
             'sumber_dana_id'    => 'nullable|exists:funding_sources,id',
-            'lokasi_barang'     => 'nullable|string|max:255',
+            'lokasi_barang'     => 'required|string|max:255',
 
             // "Setiap penambahan aset harus memiliki dasar penambahan."
             'keterangan_dasar'  => 'required|string',

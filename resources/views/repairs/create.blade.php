@@ -45,9 +45,7 @@
             <input type="hidden" name="asset_id"          id="inputAssetId"   value="{{ old('asset_id') }}">
             <input type="hidden" name="nama_aset_laporan" id="inputNamaHidden" value="{{ old('nama_aset_laporan') }}">
 
-            {{-- ════════════════════════════════════════
-                 SECTION 1 — Barang yang Rusak
-            ════════════════════════════════════════ --}}
+            {{-- SECTION 1 — Barang yang Rusak --}}
             <div class="form-section">
                 <p class="form-section-title">
                     <i class="fas fa-box" style="margin-right:5px;"></i>Barang yang Rusak
@@ -148,16 +146,20 @@
                         <i class="input-icon fas fa-location-dot"></i>
                         <input type="text" name="lokasi_kerusakan" id="inputLokasi"
                             class="form-control @error('lokasi_kerusakan') is-invalid @enderror"
-                            placeholder="Contoh: Ruang Kelas 7A, Lab Komputer Lantai 2"
-                            value="{{ old('lokasi_kerusakan') }}">
+                            placeholder="Pilih barang terlebih dahulu..."
+                            value="{{ old('lokasi_kerusakan') }}"
+                            readonly
+                            style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;">
                     </div>
+                    <p class="form-hint" id="lokasiHint" style="display:none;">
+                        <i class="fas fa-lock" style="color:var(--gray-300);margin-right:3px;"></i>
+                        Lokasi diambil otomatis dari data aset dan tidak dapat diubah.
+                    </p>
                     @error('lokasi_kerusakan') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
             </div>
 
-            {{-- ════════════════════════════════════════
-                 SECTION 2 — Detail Kerusakan
-            ════════════════════════════════════════ --}}
+            {{-- SECTION 2 — Detail Kerusakan --}}
             <div class="form-section">
                 <p class="form-section-title">
                     <i class="fas fa-triangle-exclamation" style="margin-right:5px;"></i>Detail Kerusakan
@@ -173,21 +175,41 @@
                     @error('deskripsi_kerusakan') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="fotoInput">
+                <div class="form-group" id="foto-group">
+                    <label class="form-label">
                         Foto Kerusakan <span class="required">*</span>
                     </label>
-                    <input type="file" name="fotos[]" id="fotoInput"
-                        class="form-control @error('fotos') is-invalid @enderror @error('fotos.*') is-invalid @enderror"
-                        accept=".jpg,.jpeg,.png,.webp"
-                        multiple
-                        required>
-                    <p class="form-hint">
-                        <i class="fas fa-circle-info" style="color:var(--gray-300);margin-right:3px;"></i>
-                        Wajib diisi &middot; Format JPG / PNG / WEBP &middot; Maks. 2 MB per foto &middot; Hingga 5 foto
+
+                    {{-- Grid preview --}}
+                    <div id="foto-preview-grid"
+                        style="display:none; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px;">
+                    </div>
+                    <p id="foto-counter"
+                    style="display:none; font-size:12px; color:#6b7280; text-align:right; margin-bottom:8px;">
                     </p>
-                    @error('fotos')   <p class="invalid-feedback">{{ $message }}</p> @enderror
-                    @error('fotos.*') <p class="invalid-feedback">{{ $message }}</p> @enderror
+
+                    {{-- Dropzone --}}
+                    <div id="foto-dropzone"
+                        onclick="document.getElementById('foto-picker').click()"
+                        style="border:1.5px dashed #d1d5db; border-radius:10px; padding:1.5rem;
+                                text-align:center; cursor:pointer; background:#f9fafb;
+                                transition:border-color .15s,background .15s;"
+                        onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'"
+                        onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
+                        <i class="fas fa-camera" style="font-size:24px; color:#9ca3af; display:block; margin-bottom:6px;"></i>
+                        <p style="margin:0; font-size:13px; color:#6b7280;">Klik untuk pilih foto kerusakan</p>
+                        <span style="font-size:11px; color:#9ca3af;">JPG / PNG / WEBP · maks. 2 MB · hingga 5 foto · wajib minimal 1</span>
+                    </div>
+
+                    <input type="file" id="foto-picker"
+                        accept="image/jpg,image/jpeg,image/png,image/webp"
+                        style="display:none">
+
+                    {{-- Hidden inputs yang dikirim ke controller --}}
+                    <div id="foto-hidden-inputs"></div>
+
+                    @error('fotos')   <p class="invalid-feedback" style="display:block;">{{ $message }}</p> @enderror
+                    @error('fotos.*') <p class="invalid-feedback" style="display:block;">{{ $message }}</p> @enderror
                 </div>
             </div>
 
@@ -456,6 +478,163 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+
+// ─── Lokasi: tampilkan hint saat aset dipilih ─────────────────────────────
+function applyLokasiState(lokasi) {
+    const inputLokasi  = document.getElementById('inputLokasi');
+    const lokasiHint   = document.getElementById('lokasiHint');
+    inputLokasi.value  = lokasi || '';
+    inputLokasi.readOnly = true;
+    inputLokasi.style.background = '#f3f4f6';
+    inputLokasi.style.color      = '#6b7280';
+    inputLokasi.style.cursor     = 'not-allowed';
+    lokasiHint.style.display     = 'block';
+}
+
+function resetLokasiState() {
+    const inputLokasi  = document.getElementById('inputLokasi');
+    const lokasiHint   = document.getElementById('lokasiHint');
+    inputLokasi.value  = '';
+    inputLokasi.readOnly = true;
+    inputLokasi.style.background = '#f3f4f6';
+    inputLokasi.style.color      = '#6b7280';
+    inputLokasi.style.cursor     = 'not-allowed';
+    lokasiHint.style.display     = 'none';
+}
+
+// Patch selectAsset agar memanggil applyLokasiState
+const _origSelectAsset = selectAsset;
+window.selectAsset = function(el) {
+    _origSelectAsset(el);
+    applyLokasiState(el.getAttribute('data-lokasi'));
+};
+
+// Patch clearAsset agar reset lokasi
+const _origClearAsset = clearAsset;
+window.clearAsset = function() {
+    _origClearAsset();
+    resetLokasiState();
+};
+
+// ─── Sistem foto satu per satu ────────────────────────────────────────────
+(function () {
+    const MAX        = 5;
+    const photos     = [];
+    let   primaryIdx = 0;
+
+    const picker     = document.getElementById('foto-picker');
+    const grid       = document.getElementById('foto-preview-grid');
+    const counter    = document.getElementById('foto-counter');
+    const dropzone   = document.getElementById('foto-dropzone');
+    const hiddenWrap = document.getElementById('foto-hidden-inputs');
+
+    picker.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        picker.value = '';
+        if (!file) return;
+
+        if (photos.length >= MAX) {
+            alert('Maksimal 5 foto yang dapat diunggah.');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran foto "' + file.name + '" melebihi 2 MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            photos.push({ file: file, dataUrl: ev.target.result });
+            if (photos.length === 1) primaryIdx = 0;
+            render();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function render() {
+        counter.textContent    = photos.length + ' / ' + MAX + ' foto dipilih';
+        counter.style.display  = photos.length ? 'block' : 'none';
+        grid.style.display     = photos.length ? 'grid'  : 'none';
+        grid.innerHTML         = '';
+        dropzone.style.display = photos.length >= MAX ? 'none' : 'block';
+
+        photos.forEach(function (p, i) {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;'
+                               + 'overflow:hidden;border:1px solid #e5e7eb;';
+
+            const img = document.createElement('img');
+            img.src   = p.dataUrl;
+            img.alt   = 'Foto ' + (i + 1);
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+            wrap.appendChild(img);
+
+            if (i === primaryIdx) {
+                const badge = document.createElement('span');
+                badge.textContent = 'Utama';
+                badge.style.cssText = 'position:absolute;top:4px;left:4px;background:#2563eb;'
+                    + 'color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;';
+                wrap.appendChild(badge);
+            }
+
+            const btnDel = document.createElement('button');
+            btnDel.type  = 'button';
+            btnDel.innerHTML = '&times;';
+            btnDel.title = 'Hapus foto';
+            btnDel.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;'
+                + 'border-radius:50%;background:rgba(0,0,0,.55);border:none;color:#fff;'
+                + 'cursor:pointer;font-size:14px;line-height:1;display:flex;'
+                + 'align-items:center;justify-content:center;';
+            btnDel.onclick = function () {
+                photos.splice(i, 1);
+                if (primaryIdx >= photos.length) primaryIdx = 0;
+                render();
+            };
+            wrap.appendChild(btnDel);
+
+            if (i !== primaryIdx) {
+                const btnPri = document.createElement('button');
+                btnPri.type = 'button';
+                btnPri.textContent = 'Jadikan utama';
+                btnPri.style.cssText = 'position:absolute;bottom:4px;left:50%;transform:translateX(-50%);'
+                    + 'background:rgba(0,0,0,.55);border:none;color:#fff;font-size:10px;'
+                    + 'padding:2px 7px;border-radius:4px;cursor:pointer;white-space:nowrap;';
+                btnPri.onclick = function () { primaryIdx = i; render(); };
+                wrap.appendChild(btnPri);
+            }
+
+            grid.appendChild(wrap);
+        });
+
+        syncHiddenInputs();
+    }
+
+    function syncHiddenInputs() {
+        const dt      = new DataTransfer();
+        const ordered = [photos[primaryIdx]].concat(
+            photos.filter(function (_, i) { return i !== primaryIdx; })
+        );
+        ordered.forEach(function (p) { if (p) dt.items.add(p.file); });
+
+        hiddenWrap.innerHTML = '';
+        const inp    = document.createElement('input');
+        inp.type     = 'file';
+        inp.name     = 'fotos[]';
+        inp.multiple = true;
+        inp.style.display = 'none';
+        inp.files    = dt.files;
+        hiddenWrap.appendChild(inp);
+    }
+
+    // Validasi foto saat submit — wajib minimal 1
+    document.getElementById('repairForm').addEventListener('submit', function (e) {
+        if (photos.length === 0) {
+            e.preventDefault();
+            alert('Foto kerusakan wajib diisi minimal 1 foto.');
+            document.getElementById('foto-dropzone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, true); // capture: true agar berjalan sebelum validator asset_id
+})();
 </script>
 @endpush
 

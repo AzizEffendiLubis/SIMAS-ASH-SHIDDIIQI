@@ -136,11 +136,37 @@ unset($__errorArgs, $__bag); ?>
             <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Belum ada foto untuk aset ini.</p>
             <?php endif; ?>
 
-            <div class="form-group">
-                
+            <div class="form-group" id="foto-baru-group">
                 <label class="form-label">Tambah Foto Baru</label>
-                <input type="file" name="fotos_baru[]" class="form-control" accept="image/jpg,image/jpeg,image/png,image/webp" multiple>
-                <p class="form-hint">Format JPG/PNG/WEBP, maks. 2MB per foto, hingga 5 foto</p>
+
+                
+                <div id="foto-baru-grid"
+                    style="display:none; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px;">
+                </div>
+                <p id="foto-baru-counter"
+                style="display:none; font-size:12px; color:#6b7280; text-align:right; margin-bottom:8px;">
+                </p>
+
+                
+                <div id="foto-baru-dropzone"
+                    onclick="document.getElementById('foto-baru-picker').click()"
+                    style="border:1.5px dashed #d1d5db; border-radius:10px; padding:1.5rem;
+                            text-align:center; cursor:pointer; background:#f9fafb;
+                            transition:border-color .15s,background .15s;"
+                    onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'"
+                    onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:#9ca3af; display:block; margin-bottom:6px;"></i>
+                    <p style="margin:0; font-size:13px; color:#6b7280;">Klik untuk pilih foto baru</p>
+                    <span style="font-size:11px; color:#9ca3af;">JPG / PNG / WEBP · maks. 2 MB per foto</span>
+                    <span id="foto-baru-sisa-hint" style="display:block; font-size:11px; color:#9ca3af; margin-top:2px;"></span>
+                </div>
+
+                <input type="file" id="foto-baru-picker"
+                    accept="image/jpg,image/jpeg,image/png,image/webp"
+                    style="display:none">
+
+                
+                <div id="foto-baru-hidden"></div>
             </div>
 
             <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
@@ -150,5 +176,140 @@ unset($__errorArgs, $__bag); ?>
         </form>
     </div>
 </div>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+(function () {
+    const MAX_TOTAL   = 5;
+    const existingCount = <?php echo e($asset->photos->count()); ?>;
+    const photos      = [];
+
+    const picker      = document.getElementById('foto-baru-picker');
+    const grid        = document.getElementById('foto-baru-grid');
+    const counter     = document.getElementById('foto-baru-counter');
+    const dropzone    = document.getElementById('foto-baru-dropzone');
+    const hiddenWrap  = document.getElementById('foto-baru-hidden');
+    const sisaHint    = document.getElementById('foto-baru-sisa-hint');
+
+    // Hitung slot tersisa: total maks 5 dikurangi foto lama yang belum dicentang hapus
+    function getHapusCount() {
+        return document.querySelectorAll('input[name="hapus_foto[]"]:checked').length;
+    }
+
+    function getMaxBaru() {
+        const active = existingCount - getHapusCount();
+        return Math.max(0, MAX_TOTAL - active);
+    }
+
+    function updateSisaHint() {
+        const sisa = getMaxBaru() - photos.length;
+        if (sisa > 0) {
+            sisaHint.textContent = 'Dapat menambah ' + sisa + ' foto lagi (total maks. ' + MAX_TOTAL + ')';
+        } else {
+            sisaHint.textContent = 'Batas foto tercapai (maks. ' + MAX_TOTAL + ' foto per aset)';
+        }
+    }
+
+    // Update dropzone jika checkbox hapus diubah
+    document.querySelectorAll('input[name="hapus_foto[]"]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            render();
+        });
+    });
+
+    picker.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        picker.value = '';
+        if (!file) return;
+
+        if (photos.length >= getMaxBaru()) {
+            alert('Tidak dapat menambah foto. Total foto aset tidak boleh melebihi ' + MAX_TOTAL + ' foto.');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran foto "' + file.name + '" melebihi 2 MB.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            photos.push({ file: file, dataUrl: ev.target.result });
+            render();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    function render() {
+        const maxBaru = getMaxBaru();
+
+        counter.textContent   = photos.length + ' foto baru dipilih';
+        counter.style.display = photos.length ? 'block' : 'none';
+        grid.style.display    = photos.length ? 'grid'  : 'none';
+        grid.innerHTML        = '';
+
+        // Sembunyikan dropzone jika slot penuh
+        dropzone.style.display = photos.length >= maxBaru ? 'none' : 'block';
+        updateSisaHint();
+
+        photos.forEach(function (p, i) {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;'
+                               + 'overflow:hidden;border:1px solid #e5e7eb;';
+
+            const img = document.createElement('img');
+            img.src   = p.dataUrl;
+            img.alt   = 'Foto baru ' + (i + 1);
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+            wrap.appendChild(img);
+
+            // Badge urutan
+            const badge = document.createElement('span');
+            badge.textContent = 'Baru ' + (i + 1);
+            badge.style.cssText = 'position:absolute;top:4px;left:4px;background:#0891b2;'
+                + 'color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;';
+            wrap.appendChild(badge);
+
+            // Tombol hapus
+            const btnDel = document.createElement('button');
+            btnDel.type  = 'button';
+            btnDel.innerHTML = '&times;';
+            btnDel.title = 'Batalkan foto ini';
+            btnDel.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;'
+                + 'border-radius:50%;background:rgba(0,0,0,.55);border:none;color:#fff;'
+                + 'cursor:pointer;font-size:14px;line-height:1;display:flex;'
+                + 'align-items:center;justify-content:center;';
+            btnDel.onclick = function () {
+                photos.splice(i, 1);
+                render();
+            };
+            wrap.appendChild(btnDel);
+
+            grid.appendChild(wrap);
+        });
+
+        syncHiddenInputs();
+    }
+
+    function syncHiddenInputs() {
+        const dt = new DataTransfer();
+        photos.forEach(function (p) { dt.items.add(p.file); });
+
+        hiddenWrap.innerHTML = '';
+        if (photos.length > 0) {
+            const inp    = document.createElement('input');
+            inp.type     = 'file';
+            inp.name     = 'fotos_baru[]';
+            inp.multiple = true;
+            inp.style.display = 'none';
+            inp.files    = dt.files;
+            hiddenWrap.appendChild(inp);
+        }
+    }
+
+    // Init hint saat halaman pertama kali load
+    updateSisaHint();
+})();
+</script>
+<?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\laragon\www\SIMAS-ASH-SHIDDIIQI\resources\views/assets/edit.blade.php ENDPATH**/ ?>

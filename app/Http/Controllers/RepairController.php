@@ -73,8 +73,8 @@ class RepairController extends Controller
             // Selalu wajib — baik pilih dari autocomplete maupun tulis manual
             'nama_aset_laporan'   => 'required|string|max:255',
 
-            // Opsional — diisi JS hanya jika pengguna pilih dari saran autocomplete.
-            // Kosong = laporan harus dari aset terdaftar.
+            // Pakai JS untuk pengguna pilih dari saran autocomplete.
+            // Laporan harus dari aset terdaftar.
             'asset_id'            => 'required|exists:assets,id',
 
             'deskripsi_kerusakan' => 'required|string',

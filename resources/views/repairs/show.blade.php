@@ -114,7 +114,7 @@
                     </div>
 
                     {{-- Teknisi: hanya Admin Utama & Teknisi yang menangani
-                         Dokumen: "Petugas perbaikan tidak ditampilkan kepada pengguna pelapor." --}}
+                        "Petugas perbaikan tidak ditampilkan kepada pengguna pelapor." --}}
                     @if($showTeknisi)
                     <div>
                         <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Ditangani Oleh</p>

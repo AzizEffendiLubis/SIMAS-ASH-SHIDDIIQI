@@ -64,10 +64,11 @@
 </div>
 
 
-<div class="dash-two-col">
+
+<div class="dash-two-col" style="align-items:stretch;">
 
     
-    <div class="card">
+    <div class="card" style="display:flex;flex-direction:column;height:100%;">
         <div class="card-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <i class="fas fa-screwdriver-wrench" style="color:var(--warning);font-size:14px;"></i>
@@ -81,8 +82,9 @@
             </a>
             <?php endif; ?>
         </div>
-        <div class="card-body" style="padding:4px 20px 16px;">
-            <?php $__empty_1 = true; $__currentLoopData = $recentRepairs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $repair): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+        <div class="card-body" style="padding:4px 20px 16px;flex:1;display:flex;flex-direction:column;">
+            
+            <?php $__empty_1 = true; $__currentLoopData = $recentRepairs->take(6); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $repair): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
             <div class="activity-item">
                 <div class="activity-icon <?php echo e($repair->status === 'selesai' ? 'repair-done' : 'repair'); ?>">
                     <i class="fas fa-<?php echo e($repair->status === 'selesai' ? 'circle-check' : 'screwdriver-wrench'); ?>"></i>
@@ -109,7 +111,7 @@
                 </span>
             </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-            <div class="empty-state" style="padding:28px 0;">
+            <div class="empty-state" style="padding:28px 0;margin:auto;">
                 <i class="fas fa-inbox"></i>
                 <p>Belum ada laporan perbaikan</p>
             </div>
@@ -118,7 +120,7 @@
     </div>
 
     
-    <div class="card">
+    <div class="card" style="display:flex;flex-direction:column;height:100%;">
         <div class="card-header">
             <?php if($recentLogs !== null): ?>
                 
@@ -140,11 +142,11 @@
                 </div>
             <?php endif; ?>
         </div>
-        <div class="card-body" style="padding:4px 20px 16px;">
+        <div class="card-body" style="padding:4px 20px 16px;flex:1;display:flex;flex-direction:column;">
 
             <?php if($recentLogs !== null): ?>
                 
-                <?php $__empty_1 = true; $__currentLoopData = $recentLogs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <?php $__empty_1 = true; $__currentLoopData = $recentLogs->take(6); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <div class="activity-item">
                     <div class="activity-icon asset">
                         <i class="fas fa-clock-rotate-left"></i>
@@ -173,7 +175,7 @@
                     </span>
                 </div>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                <div class="empty-state" style="padding:28px 0;">
+                <div class="empty-state" style="padding:28px 0;margin:auto;">
                     <i class="fas fa-inbox"></i>
                     <p>Belum ada aktivitas tercatat</p>
                 </div>

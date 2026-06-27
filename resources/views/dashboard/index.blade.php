@@ -64,10 +64,12 @@
 </div>
 
 {{-- ── Activity Section ── --}}
-<div class="dash-two-col">
+{{-- align-items:stretch memastikan kedua card punya tinggi yang sama,
+     sehingga batas bawah keduanya sejajar --}}
+<div class="dash-two-col" style="align-items:stretch;">
 
     {{-- ── Aktivitas Perbaikan ── --}}
-    <div class="card">
+    <div class="card" style="display:flex;flex-direction:column;height:100%;">
         <div class="card-header">
             <div style="display:flex;align-items:center;gap:8px;">
                 <i class="fas fa-screwdriver-wrench" style="color:var(--warning);font-size:14px;"></i>
@@ -81,8 +83,9 @@
             </a>
             @endif
         </div>
-        <div class="card-body" style="padding:4px 20px 16px;">
-            @forelse($recentRepairs as $repair)
+        <div class="card-body" style="padding:4px 20px 16px;flex:1;display:flex;flex-direction:column;">
+            {{-- Batasi maksimal 6 item agar tidak terlalu panjang --}}
+            @forelse($recentRepairs->take(6) as $repair)
             <div class="activity-item">
                 <div class="activity-icon {{ $repair->status === 'selesai' ? 'repair-done' : 'repair' }}">
                     <i class="fas fa-{{ $repair->status === 'selesai' ? 'circle-check' : 'screwdriver-wrench' }}"></i>
@@ -106,7 +109,7 @@
                 </span>
             </div>
             @empty
-            <div class="empty-state" style="padding:28px 0;">
+            <div class="empty-state" style="padding:28px 0;margin:auto;">
                 <i class="fas fa-inbox"></i>
                 <p>Belum ada laporan perbaikan</p>
             </div>
@@ -116,7 +119,7 @@
 
     {{-- ── Log Aktivitas (Admin Utama & Kepala Yayasan)
              atau Ringkasan Kondisi Aset (role lain) ── --}}
-    <div class="card">
+    <div class="card" style="display:flex;flex-direction:column;height:100%;">
         <div class="card-header">
             @if($recentLogs !== null)
                 {{-- Admin Utama & Kepala Yayasan
@@ -140,11 +143,11 @@
                 </div>
             @endif
         </div>
-        <div class="card-body" style="padding:4px 20px 16px;">
+        <div class="card-body" style="padding:4px 20px 16px;flex:1;display:flex;flex-direction:column;">
 
             @if($recentLogs !== null)
-                {{-- Hanya 5 log terbaru — DashboardController: ->latest()->limit(5)->get() --}}
-                @forelse($recentLogs as $log)
+                {{-- Batasi maksimal 6 log terbaru agar sejajar dengan kolom kiri --}}
+                @forelse($recentLogs->take(6) as $log)
                 <div class="activity-item">
                     <div class="activity-icon asset">
                         <i class="fas fa-clock-rotate-left"></i>
@@ -169,7 +172,7 @@
                     </span>
                 </div>
                 @empty
-                <div class="empty-state" style="padding:28px 0;">
+                <div class="empty-state" style="padding:28px 0;margin:auto;">
                     <i class="fas fa-inbox"></i>
                     <p>Belum ada aktivitas tercatat</p>
                 </div>
