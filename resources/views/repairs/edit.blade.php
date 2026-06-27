@@ -12,56 +12,53 @@
         <p>Kode: <strong style="color:var(--gray-700);">{{ $repair->kode_perbaikan }}</strong></p>
     </div>
     <div class="ph-right">
-        <a href="{{ route('repairs.show', $repair) }}" class="btn btn-outline">
+        <a href="{{ route('repairs.index') }}" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Kembali
         </a>
     </div>
 </div>
 
-<div class="card" style="max-width:740px;">
+<div class="card repair-form-card">
     <div class="card-body">
 
         {{-- ── Info Laporan (read-only) ── --}}
         <div class="form-section">
-            <p class="section-title"><i class="fas fa-circle-info" style="margin-right:5px;"></i>Info Laporan</p>
-            <div class="form-grid" style="gap:12px;margin-bottom:12px;">
+            <p class="section-title"><i class="fas fa-circle-info"></i> Info Laporan</p>
+            <div class="form-grid info-grid">
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Nama Barang (Laporan)</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);">{{ $repair->nama_aset_laporan }}</p>
+                    <p class="info-label">Nama Barang (Laporan)</p>
+                    <p class="info-value">{{ $repair->nama_aset_laporan }}</p>
                     {{-- asset adalah FK opsional — tampilkan kode jika sudah dikaitkan --}}
                     @if($repair->asset)
-                    <p style="font-size:12px;color:var(--gray-400);">{{ $repair->asset->kode_aset }} · {{ $repair->asset->unit->nama_unit ?? '' }}</p>
+                    <p class="info-sub">{{ $repair->asset->kode_aset }} · {{ $repair->asset->unit->nama_unit ?? '' }}</p>
                     @endif
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Lokasi Kerusakan</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);">{{ $repair->lokasi_kerusakan ?? '-' }}</p>
+                    <p class="info-label">Lokasi Kerusakan</p>
+                    <p class="info-value">{{ $repair->lokasi_kerusakan ?? '-' }}</p>
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Tanggal Laporan</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);">{{ $repair->tanggal_laporan->format('d M Y') }}</p>
+                    <p class="info-label">Tanggal Laporan</p>
+                    <p class="info-value">{{ $repair->tanggal_laporan->format('d M Y') }}</p>
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Dilaporkan Oleh</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);">{{ $repair->pelapor->name ?? '-' }}</p>
+                    <p class="info-label">Dilaporkan Oleh</p>
+                    <p class="info-value">{{ $repair->pelapor->name ?? '-' }}</p>
                 </div>
             </div>
             <div>
-                <p style="font-size:12px;color:var(--gray-400);margin-bottom:5px;">Deskripsi Kerusakan</p>
-                <p style="font-size:13.5px;color:var(--gray-700);background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:10px 13px;line-height:1.6;">
-                    {{ $repair->deskripsi_kerusakan }}
-                </p>
+                <p class="info-label" style="margin-bottom:5px;">Deskripsi Kerusakan</p>
+                <p class="readonly-box">{{ $repair->deskripsi_kerusakan }}</p>
             </div>
 
             {{-- Foto kerusakan (jika ada) --}}
             @if($repair->photos->isNotEmpty())
-            <div style="margin-top:12px;">
-                <p style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">Foto Kerusakan</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="readonly-photos">
+                <p class="info-label">Foto Kerusakan</p>
+                <div class="readonly-photos-grid">
                     @foreach($repair->photos as $foto)
                     <a href="{{ Storage::url($foto->file_path) }}" target="_blank">
-                        <img src="{{ Storage::url($foto->file_path) }}" alt="Foto kerusakan"
-                             style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--gray-200);">
+                        <img src="{{ Storage::url($foto->file_path) }}" alt="Foto kerusakan">
                     </a>
                     @endforeach
                 </div>
@@ -83,7 +80,7 @@
             @if(auth()->user()->isTeknisi())
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-pen-to-square" style="margin-right:5px;"></i>Update Progres</p>
+                <p class="section-title"><i class="fas fa-pen-to-square"></i> Update Progres</p>
 
                 <div class="form-group">
                     <label class="form-label">
@@ -139,7 +136,7 @@
             @else
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-file-pen" style="margin-right:5px;"></i>Detail Laporan</p>
+                <p class="section-title"><i class="fas fa-file-pen"></i> Detail Laporan</p>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -219,7 +216,7 @@
             </div>
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-link" style="margin-right:5px;"></i>Penugasan & Keterkaitan Aset</p>
+                <p class="section-title"><i class="fas fa-link"></i> Penugasan &amp; Keterkaitan Aset</p>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -281,7 +278,7 @@
             @endif
 
             {{-- ── Footer Aksi ── --}}
-            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
+            <div class="form-actions">
                 <a href="{{ route('repairs.show', $repair) }}" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
@@ -293,5 +290,47 @@
         </form>
     </div>
 </div>
+
+@push('styles')
+<style>
+    .repair-form-card { max-width: 740px; }
+
+    .section-title i { margin-right: 5px; }
+
+    .info-grid { gap: 12px; margin-bottom: 12px; }
+    .info-label { font-size: 12px; color: var(--gray-400); margin-bottom: 3px; }
+    .info-value { font-weight: 600; font-size: 14px; color: var(--gray-700); }
+    .info-sub   { font-size: 12px; color: var(--gray-400); }
+
+    .readonly-box {
+        font-size: 13.5px;
+        color: var(--gray-700);
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-sm);
+        padding: 10px 13px;
+        line-height: 1.6;
+    }
+
+    .readonly-photos { margin-top: 12px; }
+    .readonly-photos-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+    .readonly-photos-grid img {
+        width: 72px; height: 72px;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .form-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        padding-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+    }
+</style>
+@endpush
 
 @endsection

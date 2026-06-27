@@ -12,57 +12,53 @@
         <p>Kode: <strong style="color:var(--gray-700);"><?php echo e($repair->kode_perbaikan); ?></strong></p>
     </div>
     <div class="ph-right">
-        <a href="<?php echo e(route('repairs.show', $repair)); ?>" class="btn btn-outline">
+        <a href="<?php echo e(route('repairs.index')); ?>" class="btn btn-outline">
             <i class="fas fa-arrow-left"></i> Kembali
         </a>
     </div>
 </div>
 
-<div class="card" style="max-width:740px;">
+<div class="card repair-form-card">
     <div class="card-body">
 
         
         <div class="form-section">
-            <p class="section-title"><i class="fas fa-circle-info" style="margin-right:5px;"></i>Info Laporan</p>
-            <div class="form-grid" style="gap:12px;margin-bottom:12px;">
+            <p class="section-title"><i class="fas fa-circle-info"></i> Info Laporan</p>
+            <div class="form-grid info-grid">
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Nama Barang (Laporan)</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);"><?php echo e($repair->nama_aset_laporan); ?></p>
+                    <p class="info-label">Nama Barang (Laporan)</p>
+                    <p class="info-value"><?php echo e($repair->nama_aset_laporan); ?></p>
                     
                     <?php if($repair->asset): ?>
-                    <p style="font-size:12px;color:var(--gray-400);"><?php echo e($repair->asset->kode_aset); ?> · <?php echo e($repair->asset->unit->nama_unit ?? ''); ?></p>
+                    <p class="info-sub"><?php echo e($repair->asset->kode_aset); ?> · <?php echo e($repair->asset->unit->nama_unit ?? ''); ?></p>
                     <?php endif; ?>
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Lokasi Kerusakan</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);"><?php echo e($repair->lokasi_kerusakan ?? '-'); ?></p>
+                    <p class="info-label">Lokasi Kerusakan</p>
+                    <p class="info-value"><?php echo e($repair->lokasi_kerusakan ?? '-'); ?></p>
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Tanggal Laporan</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);"><?php echo e($repair->tanggal_laporan->format('d M Y')); ?></p>
+                    <p class="info-label">Tanggal Laporan</p>
+                    <p class="info-value"><?php echo e($repair->tanggal_laporan->format('d M Y')); ?></p>
                 </div>
                 <div>
-                    <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Dilaporkan Oleh</p>
-                    <p style="font-weight:600;font-size:14px;color:var(--gray-700);"><?php echo e($repair->pelapor->name ?? '-'); ?></p>
+                    <p class="info-label">Dilaporkan Oleh</p>
+                    <p class="info-value"><?php echo e($repair->pelapor->name ?? '-'); ?></p>
                 </div>
             </div>
             <div>
-                <p style="font-size:12px;color:var(--gray-400);margin-bottom:5px;">Deskripsi Kerusakan</p>
-                <p style="font-size:13.5px;color:var(--gray-700);background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:10px 13px;line-height:1.6;">
-                    <?php echo e($repair->deskripsi_kerusakan); ?>
-
-                </p>
+                <p class="info-label" style="margin-bottom:5px;">Deskripsi Kerusakan</p>
+                <p class="readonly-box"><?php echo e($repair->deskripsi_kerusakan); ?></p>
             </div>
 
             
             <?php if($repair->photos->isNotEmpty()): ?>
-            <div style="margin-top:12px;">
-                <p style="font-size:12px;color:var(--gray-400);margin-bottom:6px;">Foto Kerusakan</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div class="readonly-photos">
+                <p class="info-label">Foto Kerusakan</p>
+                <div class="readonly-photos-grid">
                     <?php $__currentLoopData = $repair->photos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $foto): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <a href="<?php echo e(Storage::url($foto->file_path)); ?>" target="_blank">
-                        <img src="<?php echo e(Storage::url($foto->file_path)); ?>" alt="Foto kerusakan"
-                             style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--gray-200);">
+                        <img src="<?php echo e(Storage::url($foto->file_path)); ?>" alt="Foto kerusakan">
                     </a>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
@@ -78,7 +74,7 @@
             <?php if(auth()->user()->isTeknisi()): ?>
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-pen-to-square" style="margin-right:5px;"></i>Update Progres</p>
+                <p class="section-title"><i class="fas fa-pen-to-square"></i> Update Progres</p>
 
                 <div class="form-group">
                     <label class="form-label">
@@ -142,7 +138,7 @@ unset($__errorArgs, $__bag); ?>
             <?php else: ?>
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-file-pen" style="margin-right:5px;"></i>Detail Laporan</p>
+                <p class="section-title"><i class="fas fa-file-pen"></i> Detail Laporan</p>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -257,7 +253,7 @@ unset($__errorArgs, $__bag); ?>
             </div>
 
             <div class="form-section">
-                <p class="section-title"><i class="fas fa-link" style="margin-right:5px;"></i>Penugasan & Keterkaitan Aset</p>
+                <p class="section-title"><i class="fas fa-link"></i> Penugasan &amp; Keterkaitan Aset</p>
 
                 <div class="form-grid">
                     <div class="form-group">
@@ -328,7 +324,7 @@ unset($__errorArgs, $__bag); ?>
             <?php endif; ?>
 
             
-            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
+            <div class="form-actions">
                 <a href="<?php echo e(route('repairs.show', $repair)); ?>" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
@@ -340,6 +336,48 @@ unset($__errorArgs, $__bag); ?>
         </form>
     </div>
 </div>
+
+<?php $__env->startPush('styles'); ?>
+<style>
+    .repair-form-card { max-width: 740px; }
+
+    .section-title i { margin-right: 5px; }
+
+    .info-grid { gap: 12px; margin-bottom: 12px; }
+    .info-label { font-size: 12px; color: var(--gray-400); margin-bottom: 3px; }
+    .info-value { font-weight: 600; font-size: 14px; color: var(--gray-700); }
+    .info-sub   { font-size: 12px; color: var(--gray-400); }
+
+    .readonly-box {
+        font-size: 13.5px;
+        color: var(--gray-700);
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-sm);
+        padding: 10px 13px;
+        line-height: 1.6;
+    }
+
+    .readonly-photos { margin-top: 12px; }
+    .readonly-photos-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+    .readonly-photos-grid img {
+        width: 72px; height: 72px;
+        object-fit: cover;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .form-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        padding-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+    }
+</style>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\laragon\www\SIMAS-ASH-SHIDDIIQI\resources\views/repairs/edit.blade.php ENDPATH**/ ?>

@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <title>SIMAS – <?php echo $__env->yieldContent('title', 'Sistem Informasi Manajemen Aset'); ?></title>
 
@@ -60,18 +60,20 @@
            RESET & BASE
         ════════════════════════════════════════════════ */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { font-size: 16px; scroll-behavior: smooth; }
-        html, body { height: 100%; }
+        html { font-size: 16px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        html, body { height: 100%; overflow-x: hidden; max-width: 100%; }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: var(--gray-100);
             color: var(--gray-800);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            position: relative;
         }
         a { text-decoration: none; color: inherit; }
         button, input, select, textarea { font-family: inherit; }
         img { display: block; max-width: 100%; }
+        table, .table-wrap { max-width: 100%; }
 
         /* ════════════════════════════════════════════════
            SCROLLBAR (webkit)
@@ -92,6 +94,8 @@
             backdrop-filter: blur(3px);
             -webkit-backdrop-filter: blur(3px);
             animation: fadeIn .2s ease;
+            overscroll-behavior: contain;
+            touch-action: none;
         }
         .sidebar-overlay.open { display: block; }
         @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
@@ -108,9 +112,17 @@
             position: fixed;
             top: 0; left: 0;
             height: 100vh;
+            height: 100dvh;
             z-index: 150;
             transition: transform var(--sidebar-transition);
             overflow: hidden;
+            overscroll-behavior: contain;
+            transform: translateX(-100%);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+        @media (min-width: 769px) {
+            .sidebar { transform: translateX(0); }
         }
 
         /* ── Branding ── */
@@ -261,12 +273,17 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 22px;
+            padding: 0 14px;
+            padding-right: calc(14px + env(safe-area-inset-right));
+            padding-left: calc(14px + env(safe-area-inset-left));
             position: fixed;
-            top: 0; left: var(--sidebar-w); right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 100;
             transition: left var(--sidebar-transition);
             box-shadow: var(--shadow-xs);
+        }
+        @media (min-width: 769px) {
+            .topbar { left: var(--sidebar-w); padding: 0 22px; }
         }
         .topbar-left { display: flex; align-items: center; gap: 14px; }
 
@@ -357,10 +374,15 @@
            MAIN WRAPPER & CONTENT
         ════════════════════════════════════════════════ */
         .main-wrapper {
-            margin-left: var(--sidebar-w);
+            margin-left: 0;
             padding-top: var(--topbar-h);
             min-height: 100vh;
             transition: margin-left var(--sidebar-transition);
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        @media (min-width: 769px) {
+            .main-wrapper { margin-left: var(--sidebar-w); }
         }
         .content {
             padding: 26px 24px;
@@ -858,66 +880,95 @@
         @media (max-width: 1024px) {
             :root { --sidebar-w: 220px; }
             .content { padding: 22px 20px; }
-            .stats-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
             .dash-two-col { grid-template-columns: 1fr 1fr; }
         }
 
         /* ── Mobile (≤ 768px) ── */
         @media (max-width: 768px) {
-            :root {
-                --sidebar-w: 256px;   /* full overlay width on mobile */
-                --topbar-h:  58px;
-            }
+            :root { --topbar-h: 58px; }
 
-            /* Sidebar: hidden off-canvas */
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
-
-            /* Topbar spans full width */
-            .topbar { left: 0; padding: 0 14px; }
             .menu-toggle { display: flex; }
             .tu-info { display: none; }   /* hide name/role on mobile topbar */
+            .topbar-action { width: 32px; height: 32px; font-size: 13px; }
 
-            .main-wrapper { margin-left: 0; }
-            .content { padding: 16px 14px; }
+            .content { padding: 16px 14px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 
-            /* Stats: 2-col */
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+            /* Stats: auto-fit so an odd last item doesn't look stranded */
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
             .stat-card  { padding: 14px 12px; gap: 10px; }
-            .stat-value { font-size: 22px; }
-            .stat-icon  { width: 40px; height: 40px; font-size: 17px; }
+            .stat-value { font-size: 21px; }
+            .stat-icon  { width: 40px; height: 40px; font-size: 17px; border-radius: 10px; }
 
-            /* Forms: single column */
-            .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+            /* Forms: single column, never overflow */
+            .form-grid, .form-grid-3 { grid-template-columns: 1fr; gap: 14px; }
+            .form-group { margin-bottom: 16px; }
 
             /* Dashboard 2-col → 1-col */
             .dash-two-col { grid-template-columns: 1fr; }
 
             /* Page header row stacks */
-            .page-header-row { flex-direction: column; align-items: flex-start; }
+            .page-header-row { flex-direction: column; align-items: stretch; gap: 12px; }
             .page-header-row .ph-right { width: 100%; }
+            .page-header-row .ph-right .btn { flex: 1; justify-content: center; }
+            .page-header h1, .page-header-row .ph-left h1 { font-size: 18px; }
 
-            /* Filters wrap */
-            .filter-row { flex-direction: column; }
+            /* Filters: stack and force full width on every control */
+            .filter-row { flex-direction: column; align-items: stretch; gap: 8px; }
             .filter-row .search-wrap { min-width: 100%; width: 100%; }
-            .filter-row select.form-control { width: 100%; }
+            .filter-row select.form-control,
+            .filter-row .form-control { width: 100%; min-width: 0; }
 
-            /* Table scroll */
-            .table-wrap { margin: 0 -14px; padding: 0 14px; border-radius: 0; }
+            /* Cards tighten up a bit */
+            .card-header { padding: 14px 16px; }
+            .card-body   { padding: 16px; }
+            .card-header h2 { font-size: 13.5px; }
 
-            /* Modal full width */
-            .modal { border-radius: var(--radius-lg); max-width: 100%; }
+            /* Table: edge-to-edge scroll area, sits inside card without double padding */
+            .table-wrap { margin: 0 -16px; padding: 0 16px; border-radius: 0; }
+            .card .card-body .table-wrap { margin: 0 -16px; }
+            table { font-size: 12.5px; min-width: 520px; }
+            thead th, tbody td { padding: 9px 10px; }
 
-            /* Topbar breadcrumb: hide parent */
+            /* Buttons: avoid overly wide tap targets, keep text fitting */
+            .btn { padding: 9px 14px; font-size: 13px; }
+            .ph-right .btn-outline, .ph-right .btn-primary { white-space: normal; }
+
+            /* Modal: fits small screens without cramming, respects safe area */
+            .modal-backdrop { padding: 12px; align-items: flex-end; }
+            .modal {
+                max-height: 88dvh;
+                width: 100%;
+                margin-bottom: env(safe-area-inset-bottom);
+            }
+            .modal-confirm .modal-body { padding: 24px 20px !important; }
+            .modal-header { padding: 18px 18px 0; }
+            .modal-body   { padding: 16px 18px; }
+            .modal-footer { padding: 0 18px 18px; flex-wrap: wrap; }
+            .modal-footer .btn { flex: 1; justify-content: center; }
+            .confirm-icon { width: 52px; height: 52px; font-size: 20px; margin-bottom: 12px; }
+
+            /* Topbar breadcrumb: hide parent, keep page title from overflowing */
             .topbar-breadcrumb .separator,
             .topbar-breadcrumb .parent-title { display: none; }
+            .topbar-breadcrumb .page-title {
+                max-width: 48vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+
+            /* Detail tables (show pages): stack label above value instead of cramped 2-col */
+            .detail-table tr { display: flex; flex-direction: column; }
+            .detail-table .dt-label { width: 100%; padding-right: 0; padding-bottom: 2px; }
         }
 
         /* ── Small phones (≤ 400px) ── */
         @media (max-width: 400px) {
-            .stats-grid { gap: 8px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
             .stat-label { font-size: 11px; }
-            .btn { font-size: 13px; padding: 8px 14px; }
+            .stat-value { font-size: 19px; }
+            .btn { font-size: 13px; padding: 8px 12px; }
+            .page-header-row .ph-right { flex-direction: column; }
+            .page-header-row .ph-right .btn { width: 100%; }
+            .topbar-breadcrumb .page-title { max-width: 38vw; font-size: 14px; }
         }
 
         /* ════════════════════════════════════════════════
@@ -1131,14 +1182,36 @@ const menuToggle  = document.getElementById('menuToggle');
 function toggleSidebar() {
     const open = sidebar.classList.toggle('open');
     overlay.classList.toggle('open', open);
-    document.body.style.overflow = open ? 'hidden' : '';
+    lockBodyScroll(open);
     menuToggle.setAttribute('aria-expanded', open);
 }
 function closeSidebar() {
     sidebar.classList.remove('open');
     overlay.classList.remove('open');
-    document.body.style.overflow = '';
+    lockBodyScroll(false);
     menuToggle.setAttribute('aria-expanded', 'false');
+}
+
+/* Lock scroll robustly (overflow:hidden alone leaks on iOS Safari) */
+let _scrollY = 0;
+function lockBodyScroll(lock) {
+    if (lock) {
+        _scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${_scrollY}px`;
+        document.body.style.left = '0';
+        document.body.style.right = '0';
+        document.body.style.width = '100%';
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, _scrollY);
+    }
 }
 
 /* Close on resize to desktop */
@@ -1159,6 +1232,7 @@ function openModal(id) {
     const el = document.getElementById(id);
     if (el) {
         el.classList.add('open');
+        lockBodyScroll(true);
         // Trap focus: focus first focusable element
         const focusable = el.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (focusable.length) focusable[0].focus();
@@ -1168,11 +1242,14 @@ function closeModal(id) {
     if (!id) return;
     const el = document.getElementById(id);
     if (el) el.classList.remove('open');
+    if (!document.querySelector('.modal-backdrop.open') && !sidebar.classList.contains('open')) {
+        lockBodyScroll(false);
+    }
 }
 
 /* Close modal on backdrop click */
 document.querySelectorAll('.modal-backdrop').forEach(el => {
-    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+    el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
 });
 
 /* ── Flash auto-dismiss ──────────────────────── */

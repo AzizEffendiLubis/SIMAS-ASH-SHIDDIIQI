@@ -25,14 +25,15 @@
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;" class="dash-two-col">
+
+<div class="dash-two-col">
 
     
     <div style="display:flex;flex-direction:column;gap:16px;">
 
         
         <div class="card">
-            <div class="card-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div class="card-body status-card-body">
                 
                 <?php
                     $statusMeta = match($repair->status) {
@@ -41,12 +42,10 @@
                         default             => ['bg' => '#fef9c3', 'color' => '#a16207', 'icon' => 'clock'],
                     };
                 ?>
-                <div style="width:54px;height:54px;border-radius:14px;flex-shrink:0;
-                    background:<?php echo e($statusMeta['bg']); ?>;color:<?php echo e($statusMeta['color']); ?>;
-                    display:flex;align-items:center;justify-content:center;font-size:22px;">
+                <div class="status-icon" style="background:<?php echo e($statusMeta['bg']); ?>;color:<?php echo e($statusMeta['color']); ?>;">
                     <i class="fas fa-<?php echo e($statusMeta['icon']); ?><?php echo e($repair->status === 'sedang_diperbaiki' ? ' fa-spin' : ''); ?>"></i>
                 </div>
-                <div>
+                <div class="status-main">
                     <p style="font-size:12px;color:var(--gray-400);margin-bottom:4px;">Status Perbaikan</p>
                     
                     <span class="badge <?php echo e($repair->status_badge); ?>" style="font-size:13.5px;padding:4px 14px;">
@@ -55,7 +54,7 @@
                     </span>
                 </div>
                 <?php if($repair->tanggal_selesai): ?>
-                <div style="margin-left:auto;text-align:right;">
+                <div class="status-selesai">
                     <p style="font-size:12px;color:var(--gray-400);">Selesai pada</p>
                     <p style="font-weight:700;font-size:14px;color:var(--gray-700);">
                         <?php echo e($repair->tanggal_selesai->format('d M Y')); ?>
@@ -148,9 +147,7 @@
                     <p style="font-size:12px;color:var(--gray-400);font-weight:600;margin-bottom:6px;">
                         Deskripsi Kerusakan
                     </p>
-                    <p style="font-size:13.5px;color:var(--gray-700);
-                        background:#fef9c3;border:1px solid #fde68a;
-                        border-radius:var(--radius-sm);padding:12px 14px;line-height:1.7;">
+                    <p class="note-box note-box-warning">
                         <?php echo e($repair->deskripsi_kerusakan); ?>
 
                     </p>
@@ -162,9 +159,7 @@
                     <p style="font-size:12px;color:var(--gray-400);font-weight:600;margin-bottom:6px;">
                         Tindakan Perbaikan
                     </p>
-                    <p style="font-size:13.5px;color:var(--gray-700);
-                        background:#f0fdf4;border:1px solid #bbf7d0;
-                        border-radius:var(--radius-sm);padding:12px 14px;line-height:1.7;">
+                    <p class="note-box note-box-success">
                         <?php echo e($repair->tindakan_perbaikan); ?>
 
                     </p>
@@ -187,16 +182,10 @@
             </div>
             <div class="card-body">
                 <?php if($repair->photos->isNotEmpty()): ?>
-                    <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div class="repair-photo-list">
                         <?php $__currentLoopData = $repair->photos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $foto): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <a href="<?php echo e(Storage::url($foto->file_path)); ?>" target="_blank" rel="noopener">
-                            <img src="<?php echo e(Storage::url($foto->file_path)); ?>" alt="Foto kerusakan <?php echo e($loop->iteration); ?>"
-                                 style="width:100%;border-radius:var(--radius-sm);
-                                        border:1px solid var(--gray-200);
-                                        object-fit:cover;max-height:220px;
-                                        transition:opacity .15s;"
-                                 onmouseover="this.style.opacity='.85'"
-                                 onmouseout="this.style.opacity='1'">
+                        <a href="<?php echo e(Storage::url($foto->file_path)); ?>" target="_blank" rel="noopener" class="repair-photo-link">
+                            <img src="<?php echo e(Storage::url($foto->file_path)); ?>" alt="Foto kerusakan <?php echo e($loop->iteration); ?>">
                         </a>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
@@ -216,11 +205,9 @@
                 <h2>Foto Aset</h2>
             </div>
             <div class="card-body">
-                <a href="<?php echo e(route('assets.show', $repair->asset)); ?>" title="Lihat detail aset">
+                <a href="<?php echo e(route('assets.show', $repair->asset)); ?>" title="Lihat detail aset" class="repair-photo-link">
                     <img src="<?php echo e(Storage::url($repair->asset->foto_utama->file_path)); ?>"
-                         alt="Foto aset <?php echo e($repair->asset->nama_barang); ?>"
-                         style="width:100%;border-radius:var(--radius-sm);
-                                border:1px solid var(--gray-200);object-fit:cover;max-height:200px;">
+                         alt="Foto aset <?php echo e($repair->asset->nama_barang); ?>">
                 </a>
                 <p style="font-size:12px;color:var(--gray-400);margin-top:8px;text-align:center;">
                     <?php echo e($repair->asset->nama_barang); ?>
@@ -232,6 +219,58 @@
 
     </div>
 </div>
+
+<?php $__env->startPush('styles'); ?>
+<style>
+    /* ── Status card: wrap rapi di HP, ikon & "Selesai pada" tidak kepepet ── */
+    .status-card-body {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .status-icon {
+        width: 54px; height: 54px;
+        border-radius: 14px;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+    }
+    .status-main { min-width: 0; }
+    .status-selesai { margin-left: auto; text-align: right; }
+
+    /* ── Kotak catatan (deskripsi kerusakan / tindakan perbaikan) ── */
+    .note-box {
+        font-size: 13.5px;
+        color: var(--gray-700);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        line-height: 1.7;
+        word-break: break-word;
+    }
+    .note-box-warning { background: #fef9c3; border: 1px solid #fde68a; }
+    .note-box-success { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+    /* ── Foto kerusakan & foto aset: hover opacity dipindah dari inline JS ke CSS ── */
+    .repair-photo-list { display: flex; flex-direction: column; gap: 8px; }
+    .repair-photo-link { display: block; transition: opacity var(--transition); }
+    .repair-photo-link:hover { opacity: .85; }
+    .repair-photo-link img {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--gray-200);
+        object-fit: cover;
+        max-height: 220px;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .status-card-body { gap: 12px; }
+        .status-selesai { margin-left: 0; text-align: left; width: 100%; padding-top: 8px; border-top: 1px solid var(--gray-100); }
+        .repair-photo-link img { max-height: 180px; }
+    }
+</style>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH D:\laragon\www\SIMAS-ASH-SHIDDIIQI\resources\views/repairs/show.blade.php ENDPATH**/ ?>

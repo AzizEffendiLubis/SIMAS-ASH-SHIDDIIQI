@@ -3,84 +3,92 @@
 @section('page-title', 'Log Aktivitas')
 
 @section('content')
-<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-    <div>
+
+{{-- ── Page Header ── --}}
+<div class="page-header-row">
+    <div class="ph-left">
         <h1>Detail Log Aktivitas</h1>
-        <p>ID Log: <strong>#{{ $activityLog->id }}</strong></p>
+        <p>ID Log: <strong style="color:var(--gray-700);">#{{ $activityLog->id }}</strong></p>
     </div>
-    <a href="{{ route('activity-logs.index') }}" class="btn btn-outline">
-        <i class="fas fa-arrow-left"></i> Kembali
-    </a>
+    <div class="ph-right">
+        <a href="{{ route('activity-logs.index') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Kembali
+        </a>
+    </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+<div class="dash-two-col">
 
     {{-- ── Kolom Kiri ── --}}
-    <div style="display:flex;flex-direction:column;gap:20px;">
+    {{-- min-width:0 wajib di sini: tanpa ini, grid item ini akan melebar
+         mengikuti min-content width tabel diff (min-width:580px, dari rule
+         global `table { min-width:580px }` di layout.blade.php), sehingga
+         card "Informasi Aktivitas" ikut terdorong dan batas kanannya tidak
+         sejajar dengan tombol "Kembali" di atas. overflow-x:auto pada
+         pembungkus tabel diff tidak akan berfungsi tanpa ini. --}}
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0;">
 
         {{-- Info Utama --}}
         <div class="card">
+            <div class="card-header">
+                <h2>Informasi Aktivitas</h2>
+            </div>
             <div class="card-body">
-                <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-                    color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">
-                    Informasi Aktivitas
-                </p>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-grid" style="gap:14px;">
 
                     <div>
-                        <p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">Waktu</p>
+                        <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Waktu</p>
                         {{-- created_at: cast 'datetime' di ActivityLog model. $timestamps = false — tidak ada updated_at. --}}
-                        <p style="font-weight:600;font-size:14px;">
+                        <p style="font-weight:700;font-size:15px;color:var(--gray-800);">
                             {{ $activityLog->created_at->format('d M Y') }}
                         </p>
-                        <p style="font-size:12.5px;color:#64748b;">
+                        <p style="font-size:12.5px;color:var(--gray-400);margin-top:1px;">
                             {{ $activityLog->created_at->format('H:i:s') }}
                         </p>
                     </div>
 
                     <div>
-                        <p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">IP Address</p>
-                        <p style="font-weight:500;font-family:monospace;">
+                        <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">IP Address</p>
+                        <p style="font-weight:500;font-family:monospace;color:var(--gray-700);">
                             {{ $activityLog->ip_address ?? '-' }}
                         </p>
                     </div>
 
                     <div>
-                        <p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">Pengguna</p>
+                        <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Pengguna</p>
                         {{-- user: relasi belongsTo User di ActivityLog model. Bisa null jika user_id null (aksi sistem). --}}
                         @if($activityLog->user)
-                            <p style="font-weight:600;">{{ $activityLog->user->name }}</p>
-                            <p style="font-size:12px;color:#64748b;">
+                            <p style="font-weight:600;color:var(--gray-700);">{{ $activityLog->user->name }}</p>
+                            <p style="font-size:12px;color:var(--gray-400);margin-top:1px;">
                                 {{ $activityLog->user->username }}
                                 {{-- role_label: accessor getRoleLabelAttribute() di User model --}}
                                 &middot; {{ $activityLog->user->role_label }}
                             </p>
                         @else
-                            <p style="color:#94a3b8;font-style:italic;">Sistem</p>
+                            <p style="font-size:13px;color:var(--gray-300);font-style:italic;">Sistem</p>
                         @endif
                     </div>
 
                     <div>
-                        <p style="font-size:12px;color:#94a3b8;margin-bottom:4px;">Aksi</p>
+                        <p style="font-size:12px;color:var(--gray-400);margin-bottom:3px;">Aksi</p>
                         @php
-                            // Warna badge berdasarkan prefix nama aksi.
+                            // Badge warna berdasarkan prefix nama aksi, mengikuti palet .badge-* di layout.
                             // Aksi yang tercatat: tambah_aset, edit_kondisi_aset,
                             // tambah_laporan_kerusakan, update_progres_perbaikan,
                             // tambah_pengguna, edit_pengguna, tambah_unit, edit_unit,
                             // tambah_sumber_dana, edit_sumber_dana,
                             // tambah_jenis_gudang, edit_jenis_gudang
-                            $actionColor = match(true) {
-                                str_contains($activityLog->action, 'tambah') => ['bg' => '#dcfce7', 'text' => '#15803d'],
-                                str_contains($activityLog->action, 'edit')   => ['bg' => '#dbeafe', 'text' => '#1d4ed8'],
-                                str_contains($activityLog->action, 'hapus')  => ['bg' => '#fee2e2', 'text' => '#dc2626'],
-                                str_contains($activityLog->action, 'login')  => ['bg' => '#f3e8ff', 'text' => '#7c3aed'],
-                                str_contains($activityLog->action, 'update') => ['bg' => '#fef9c3', 'text' => '#a16207'],
-                                default                                      => ['bg' => '#f1f5f9', 'text' => '#475569'],
+                            $actionBadge = match(true) {
+                                str_contains($activityLog->action, 'tambah') => 'badge-success',
+                                str_contains($activityLog->action, 'edit')   => 'badge-unit',
+                                str_contains($activityLog->action, 'hapus')  => 'badge-danger',
+                                str_contains($activityLog->action, 'login')  => 'badge-admin',
+                                str_contains($activityLog->action, 'update') => 'badge-warning',
+                                default                                      => 'badge-secondary',
                             };
                         @endphp
-                        <span style="display:inline-block;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:600;
-                            background:{{ $actionColor['bg'] }};color:{{ $actionColor['text'] }};">
+                        <span class="badge {{ $actionBadge }}" style="font-size:13px;padding:4px 12px;">
                             {{ str_replace('_', ' ', $activityLog->action) }}
                         </span>
                     </div>
@@ -88,10 +96,9 @@
                 </div>
 
                 @if($activityLog->description)
-                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #f1f5f9;">
-                    <p style="font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600;">Deskripsi</p>
-                    <p style="font-size:13.5px;color:#374151;background:#f8fafc;border-radius:8px;
-                        padding:12px 14px;border:1px solid #e2e8f0;line-height:1.6;">
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--gray-100);">
+                    <p style="font-size:12px;color:var(--gray-400);font-weight:600;margin-bottom:6px;">Deskripsi</p>
+                    <p class="note-box note-box-info">
                         {{ $activityLog->description }}
                     </p>
                 </div>
@@ -103,11 +110,10 @@
         {{-- JSON Diff: old_data vs new_data --}}
         @if($activityLog->old_data || $activityLog->new_data)
         <div class="card">
+            <div class="card-header">
+                <h2>Perubahan Data</h2>
+            </div>
             <div class="card-body">
-                <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-                    color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">
-                    Perubahan Data
-                </p>
 
                 {{--
                     old_data & new_data: cast 'array' di ActivityLog model.
@@ -124,7 +130,7 @@
                 @endphp
 
                 @if($allKeys->isNotEmpty())
-                <div class="table-wrap">
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius);max-width:100%;">
                     <table>
                         <thead>
                             <tr>
@@ -141,23 +147,23 @@
                                     $new     = array_key_exists($key, $newData) ? $newData[$key] : null;
                                     $changed = $old !== $new;
                                 @endphp
-                                <tr style="{{ $changed ? 'background:#fffbeb;' : '' }}">
-                                    <td style="font-family:monospace;font-size:12.5px;font-weight:600;color:#374151;">
+                                <tr style="{{ $changed ? 'background:var(--warning-light);' : '' }}">
+                                    <td style="font-family:monospace;font-size:12.5px;font-weight:600;color:var(--gray-700);">
                                         {{ $key }}
                                         @if($changed)
                                             <span style="display:inline-block;width:6px;height:6px;border-radius:50%;
-                                                background:#f59e0b;margin-left:5px;vertical-align:middle;"></span>
+                                                background:var(--warning);margin-left:5px;vertical-align:middle;"></span>
                                         @endif
                                     </td>
                                     <td style="font-size:13px;">
                                         @if(is_null($old))
-                                            <span style="color:#94a3b8;font-style:italic;">—</span>
+                                            <span style="color:var(--gray-300);font-style:italic;">—</span>
                                         @elseif(is_bool($old))
-                                            <span style="color:{{ $old ? '#16a34a' : '#dc2626' }};">
+                                            <span style="color:{{ $old ? '#16a34a' : 'var(--danger)' }};font-weight:600;">
                                                 {{ $old ? 'true' : 'false' }}
                                             </span>
                                         @elseif(is_array($old))
-                                            <code style="font-size:11.5px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">
+                                            <code style="font-size:11.5px;background:var(--gray-100);padding:2px 6px;border-radius:4px;">
                                                 {{ json_encode($old, JSON_UNESCAPED_UNICODE) }}
                                             </code>
                                         @else
@@ -166,17 +172,17 @@
                                     </td>
                                     <td style="font-size:13px;">
                                         @if(is_null($new))
-                                            <span style="color:#94a3b8;font-style:italic;">—</span>
+                                            <span style="color:var(--gray-300);font-style:italic;">—</span>
                                         @elseif(is_bool($new))
-                                            <span style="color:{{ $new ? '#16a34a' : '#dc2626' }};">
+                                            <span style="color:{{ $new ? '#16a34a' : 'var(--danger)' }};font-weight:600;">
                                                 {{ $new ? 'true' : 'false' }}
                                             </span>
                                         @elseif(is_array($new))
-                                            <code style="font-size:11.5px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">
+                                            <code style="font-size:11.5px;background:var(--gray-100);padding:2px 6px;border-radius:4px;">
                                                 {{ json_encode($new, JSON_UNESCAPED_UNICODE) }}
                                             </code>
                                         @else
-                                            <span style="{{ $changed ? 'font-weight:600;color:#1d4ed8;' : '' }}">
+                                            <span style="{{ $changed ? 'font-weight:600;color:var(--primary);' : '' }}">
                                                 {{ $new }}
                                             </span>
                                         @endif
@@ -187,7 +193,10 @@
                     </table>
                 </div>
                 @else
-                    <p style="font-size:13px;color:#94a3b8;">Tidak ada data perubahan yang tercatat.</p>
+                    <div class="empty-state" style="padding:28px 16px;">
+                        <i class="fas fa-file-circle-question"></i>
+                        <p>Tidak ada data perubahan yang tercatat</p>
+                    </div>
                 @endif
 
             </div>
@@ -197,15 +206,16 @@
     </div>
 
     {{-- ── Kolom Kanan ── --}}
-    <div style="display:flex;flex-direction:column;gap:20px;">
+    {{-- min-width:0 juga ditambahkan di sini untuk konsistensi/jaga-jaga,
+         walau saat ini belum ada elemen lebar tetap di kolom kanan. --}}
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0;">
 
         {{-- Entitas Terkait --}}
         <div class="card">
+            <div class="card-header">
+                <h2>Entitas Terkait</h2>
+            </div>
             <div class="card-body">
-                <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-                    color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">
-                    Entitas Terkait
-                </p>
 
                 @if($activityLog->subject_type && $activityLog->subject_id)
                     @php
@@ -246,15 +256,13 @@
                         };
                     @endphp
 
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                        <div style="width:40px;height:40px;border-radius:10px;background:#eff6ff;
-                            display:flex;align-items:center;justify-content:center;
-                            color:#2563eb;font-size:16px;">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                        <div class="stat-icon blue" style="width:40px;height:40px;font-size:16px;border-radius:10px;">
                             <i class="fas fa-{{ $subjectIcon }}"></i>
                         </div>
-                        <div>
-                            <p style="font-weight:600;font-size:14px;">{{ $subjectLabel }}</p>
-                            <p style="font-size:12px;color:#94a3b8;">ID #{{ $activityLog->subject_id }}</p>
+                        <div style="min-width:0;">
+                            <p style="font-weight:600;font-size:14px;color:var(--gray-700);">{{ $subjectLabel }}</p>
+                            <p style="font-size:12px;color:var(--gray-400);">ID #{{ $activityLog->subject_id }}</p>
                         </div>
                     </div>
 
@@ -274,14 +282,13 @@
                     @endif
 
                 @else
-                    <p style="font-size:13px;color:#94a3b8;font-style:italic;">
-                        Tidak ada entitas terkait pada log ini.
-                    </p>
+                    <div class="empty-state" style="padding:28px 16px;">
+                        <i class="fas fa-link-slash"></i>
+                        <p>Tidak ada entitas terkait pada log ini</p>
+                    </div>
                 @endif
             </div>
         </div>
-
-
 
         {{--
             Navigasi prev/next.
@@ -292,34 +299,53 @@
         --}}
         @if(isset($prevLog) || isset($nextLog))
         <div class="card">
-            <div class="card-body">
-                <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
-                    color:#2563eb;margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">
-                    Navigasi
-                </p>
-                <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="card-header">
+                <h2>Navigasi</h2>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
 
-                    @if(isset($nextLog))
-                        <a href="{{ route('activity-logs.show', $nextLog) }}"
-                            class="btn btn-outline" style="width:100%;justify-content:space-between;">
-                            <span><i class="fas fa-arrow-left"></i> Log Lebih Baru</span>
-                            <span style="font-size:11.5px;color:#94a3b8;">#{{ $nextLog->id }}</span>
-                        </a>
-                    @endif
+                @if(isset($nextLog))
+                    <a href="{{ route('activity-logs.show', $nextLog) }}"
+                        class="btn btn-outline" style="width:100%;justify-content:space-between;">
+                        <span><i class="fas fa-arrow-left"></i> Log Lebih Baru</span>
+                        <span style="font-size:11.5px;color:var(--gray-400);">#{{ $nextLog->id }}</span>
+                    </a>
+                @endif
 
-                    @if(isset($prevLog))
-                        <a href="{{ route('activity-logs.show', $prevLog) }}"
-                            class="btn btn-outline" style="width:100%;justify-content:space-between;">
-                            <span>Log Lebih Lama <i class="fas fa-arrow-right"></i></span>
-                            <span style="font-size:11.5px;color:#94a3b8;">#{{ $prevLog->id }}</span>
-                        </a>
-                    @endif
+                @if(isset($prevLog))
+                    <a href="{{ route('activity-logs.show', $prevLog) }}"
+                        class="btn btn-outline" style="width:100%;justify-content:space-between;">
+                        <span>Log Lebih Lama <i class="fas fa-arrow-right"></i></span>
+                        <span style="font-size:11.5px;color:var(--gray-400);">#{{ $prevLog->id }}</span>
+                    </a>
+                @endif
 
-                </div>
             </div>
         </div>
         @endif
 
     </div>
 </div>
+
+@push('styles')
+<style>
+    /* ── Kotak deskripsi log, mengikuti pola note-box di repair/show ── */
+    .note-box {
+        font-size: 13.5px;
+        color: var(--gray-700);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        line-height: 1.7;
+        word-break: break-word;
+    }
+    .note-box-info { background: var(--info-light); border: 1px solid #a5f3fc; }
+
+    /* Cegah tabel diff (min-width 580px dari layout) mendorong lebar seluruh
+       halaman di mobile — scroll dibatasi hanya di dalam card ini. */
+    @media (max-width: 768px) {
+        table { font-size: 12.5px; }
+    }
+</style>
+@endpush
+
 @endsection

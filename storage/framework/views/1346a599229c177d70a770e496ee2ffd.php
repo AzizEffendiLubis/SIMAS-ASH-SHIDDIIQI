@@ -23,17 +23,17 @@
 <div class="alert alert-error">
     <i class="fas fa-triangle-exclamation"></i>
     <div>
-        <p style="font-weight:700;margin-bottom:4px;">Terdapat kesalahan:</p>
-        <ul style="margin:0;padding-left:16px;">
+        <p class="error-summary-title">Terdapat kesalahan:</p>
+        <ul class="error-summary-list">
             <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <li style="font-size:13px;"><?php echo e($error); ?></li>
+                <li><?php echo e($error); ?></li>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
 </div>
 <?php endif; ?>
 
-<div class="card" style="max-width:740px;">
+<div class="card repair-form-card">
     <div class="card-body">
         <form action="<?php echo e(route('repairs.store')); ?>" method="POST" enctype="multipart/form-data" id="repairForm">
             <?php echo csrf_field(); ?>
@@ -45,17 +45,17 @@
             
             <div class="form-section">
                 <p class="form-section-title">
-                    <i class="fas fa-box" style="margin-right:5px;"></i>Barang yang Rusak
+                    <i class="fas fa-box"></i> Barang yang Rusak
                 </p>
 
                 
-                <div class="form-group" style="position:relative;">
+                <div class="form-group asset-autocomplete">
                     <label class="form-label" for="inputNamaAset">
                         Nama Barang yang Rusak <span class="required">*</span>
                     </label>
 
                     
-                    <div class="input-wrap" style="position:relative;">
+                    <div class="input-wrap">
                         <i class="input-icon fas fa-box-open"></i>
                         <input type="text"
                             id="inputNamaAset"
@@ -82,14 +82,11 @@ unset($__errorArgs, $__bag); ?>"
                             aria-controls="assetSuggestions"
                             aria-expanded="false">
                         
-                        <span id="statusIcon" style="
-                            position:absolute;right:12px;top:50%;transform:translateY(-50%);
-                            font-size:14px;pointer-events:none;display:none;">
-                        </span>
+                        <span id="statusIcon" class="asset-status-icon"></span>
                     </div>
 
                     <p class="form-hint" id="namaHint">
-                        <i class="fas fa-circle-info" style="color:var(--gray-300);margin-right:3px;"></i>
+                        <i class="fas fa-circle-info"></i>
                         Ketik minimal 1 huruf — aset yang berawalan huruf tersebut akan muncul. Wajib pilih dari daftar.
                         <?php if(auth()->user()->unit_id && !auth()->user()->isAdminUtama() && !auth()->user()->isKepalaYayasan()): ?>
                             &nbsp;Menampilkan aset unit <strong><?php echo e(auth()->user()->unit->nama_unit); ?></strong>.
@@ -97,8 +94,8 @@ unset($__errorArgs, $__bag); ?>"
                     </p>
 
                     
-                    <p id="dropdownError" style="display:none;color:var(--danger,#dc3545);font-size:12.5px;margin-top:4px;">
-                        <i class="fas fa-circle-exclamation" style="margin-right:3px;"></i>
+                    <p id="dropdownError" class="dropdown-error">
+                        <i class="fas fa-circle-exclamation"></i>
                         Pilih barang dari daftar saran — tidak bisa diisi manual.
                     </p>
                     <?php $__errorArgs = ['nama_aset_laporan'];
@@ -119,43 +116,17 @@ endif;
 unset($__errorArgs, $__bag); ?>
 
                     
-                    <div id="assetSuggestions"
-                         role="listbox"
-                         style="
-                            display:none;
-                            position:absolute;
-                            top:100%; left:0; right:0;
-                            background:#fff;
-                            border:1.5px solid var(--primary);
-                            border-top:none;
-                            border-radius:0 0 var(--radius-sm) var(--radius-sm);
-                            box-shadow:var(--shadow);
-                            z-index:50;
-                            max-height:240px;
-                            overflow-y:auto;">
-                    </div>
+                    <div id="assetSuggestions" class="asset-suggestions" role="listbox"></div>
                 </div>
 
                 
-                <div id="assetPreview" style="
-                    display:none;
-                    background:var(--primary-xlight);
-                    border:1px solid var(--primary-light);
-                    border-radius:var(--radius-sm);
-                    padding:11px 14px;
-                    margin-top:-10px;
-                    margin-bottom:16px;
-                    align-items:center;
-                    gap:10px;">
-                    <i class="fas fa-circle-check" style="color:var(--primary);font-size:16px;flex-shrink:0;"></i>
-                    <div style="min-width:0;flex:1;">
-                        <p style="font-size:12px;color:var(--primary);font-weight:700;margin:0 0 1px;">Aset terdaftar dipilih</p>
-                        <p id="previewDetail" style="font-size:12.5px;color:var(--gray-600);margin:0;"></p>
+                <div id="assetPreview" class="asset-preview">
+                    <i class="fas fa-circle-check"></i>
+                    <div class="asset-preview-body">
+                        <p class="asset-preview-title">Aset terdaftar dipilih</p>
+                        <p id="previewDetail" class="asset-preview-detail"></p>
                     </div>
-                    <button type="button" onclick="clearAsset()"
-                        style="margin-left:auto;background:none;border:none;cursor:pointer;
-                               color:var(--gray-400);font-size:13px;flex-shrink:0;padding:0;"
-                        title="Ganti pilihan">
+                    <button type="button" class="asset-preview-change" onclick="clearAsset()" title="Ganti pilihan">
                         <i class="fas fa-pen-to-square"></i> Ganti
                     </button>
                 </div>
@@ -166,7 +137,7 @@ unset($__errorArgs, $__bag); ?>
                     <div class="input-wrap">
                         <i class="input-icon fas fa-location-dot"></i>
                         <input type="text" name="lokasi_kerusakan" id="inputLokasi"
-                            class="form-control <?php $__errorArgs = ['lokasi_kerusakan'];
+                            class="form-control locked-input <?php $__errorArgs = ['lokasi_kerusakan'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -176,11 +147,10 @@ endif;
 unset($__errorArgs, $__bag); ?>"
                             placeholder="Pilih barang terlebih dahulu..."
                             value="<?php echo e(old('lokasi_kerusakan')); ?>"
-                            readonly
-                            style="background:#f3f4f6;color:#6b7280;cursor:not-allowed;">
+                            readonly>
                     </div>
                     <p class="form-hint" id="lokasiHint" style="display:none;">
-                        <i class="fas fa-lock" style="color:var(--gray-300);margin-right:3px;"></i>
+                        <i class="fas fa-lock"></i>
                         Lokasi diambil otomatis dari data aset dan tidak dapat diubah.
                     </p>
                     <?php $__errorArgs = ['lokasi_kerusakan'];
@@ -197,7 +167,7 @@ unset($__errorArgs, $__bag); ?>
             
             <div class="form-section">
                 <p class="form-section-title">
-                    <i class="fas fa-triangle-exclamation" style="margin-right:5px;"></i>Detail Kerusakan
+                    <i class="fas fa-triangle-exclamation"></i> Detail Kerusakan
                 </p>
 
                 <div class="form-group">
@@ -230,24 +200,14 @@ unset($__errorArgs, $__bag); ?>
                     </label>
 
                     
-                    <div id="foto-preview-grid"
-                        style="display:none; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px;">
-                    </div>
-                    <p id="foto-counter"
-                    style="display:none; font-size:12px; color:#6b7280; text-align:right; margin-bottom:8px;">
-                    </p>
+                    <div id="foto-preview-grid" class="foto-preview-grid"></div>
+                    <p id="foto-counter" class="foto-counter"></p>
 
                     
-                    <div id="foto-dropzone"
-                        onclick="document.getElementById('foto-picker').click()"
-                        style="border:1.5px dashed #d1d5db; border-radius:10px; padding:1.5rem;
-                                text-align:center; cursor:pointer; background:#f9fafb;
-                                transition:border-color .15s,background .15s;"
-                        onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'"
-                        onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
-                        <i class="fas fa-camera" style="font-size:24px; color:#9ca3af; display:block; margin-bottom:6px;"></i>
-                        <p style="margin:0; font-size:13px; color:#6b7280;">Klik untuk pilih foto kerusakan</p>
-                        <span style="font-size:11px; color:#9ca3af;">JPG / PNG / WEBP · maks. 2 MB · hingga 5 foto · wajib minimal 1</span>
+                    <div id="foto-dropzone" class="foto-dropzone" onclick="document.getElementById('foto-picker').click()">
+                        <i class="fas fa-camera"></i>
+                        <p>Klik untuk pilih foto kerusakan</p>
+                        <span>JPG / PNG / WEBP · maks. 2 MB · hingga 5 foto · wajib minimal 1</span>
                     </div>
 
                     <input type="file" id="foto-picker"
@@ -277,7 +237,7 @@ unset($__errorArgs, $__bag); ?>
             </div>
 
             
-            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px;">
+            <div class="form-actions">
                 <a href="<?php echo e(route('repairs.index')); ?>" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
@@ -289,6 +249,172 @@ unset($__errorArgs, $__bag); ?>
         </form>
     </div>
 </div>
+
+<?php $__env->startPush('styles'); ?>
+<style>
+    .repair-form-card { max-width: 740px; }
+
+    .error-summary-title { font-weight: 700; margin-bottom: 4px; }
+    .error-summary-list  { margin: 0; padding-left: 16px; }
+    .error-summary-list li { font-size: 13px; }
+
+    .form-section-title i,
+    .section-title i { margin-right: 5px; }
+
+    /* ── Autocomplete aset ── */
+    .asset-autocomplete { position: relative; }
+
+    .asset-status-icon {
+        position: absolute; right: 12px; top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px; pointer-events: none; display: none;
+    }
+    .asset-status-icon .fa-circle-check       { color: var(--primary); }
+    .asset-status-icon .fa-circle-exclamation { color: var(--warning); }
+
+    #namaHint i,
+    #dropdownError i,
+    #lokasiHint i { margin-right: 3px; }
+    #namaHint i      { color: var(--gray-300); }
+    #lokasiHint i    { color: var(--gray-300); }
+
+    .dropdown-error {
+        display: none;
+        color: var(--danger);
+        font-size: 12.5px;
+        margin-top: 4px;
+    }
+
+    .asset-suggestions {
+        display: none;
+        position: absolute;
+        top: 100%; left: 0; right: 0;
+        background: #fff;
+        border: 1.5px solid var(--primary);
+        border-top: none;
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+        box-shadow: var(--shadow);
+        z-index: 50;
+        max-height: 240px;
+        overflow-y: auto;
+    }
+    .suggestion-item {
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 13.5px;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item .si-row { display: flex; align-items: center; gap: 6px; }
+    .suggestion-item .si-row i { color: var(--primary); font-size: 12px; flex-shrink: 0; }
+    .suggestion-item .si-name { font-weight: 600; color: var(--gray-800); }
+    .suggestion-item .si-code {
+        font-size: 11.5px; color: var(--gray-400);
+        background: var(--gray-100);
+        padding: 1px 6px; border-radius: 4px;
+        margin-left: auto; flex-shrink: 0;
+    }
+    .suggestion-item .si-loc {
+        font-size: 11.5px; color: var(--gray-400);
+        margin-top: 3px; padding-left: 18px;
+    }
+    .suggestion-item .si-loc i { font-size: 10px; margin-right: 3px; }
+    .suggestion-empty {
+        padding: 12px 14px; font-size: 13px;
+        color: var(--gray-400); text-align: center;
+    }
+
+    /* ── Preview aset terpilih ── */
+    .asset-preview {
+        display: none;
+        background: var(--primary-xlight);
+        border: 1px solid var(--primary-light);
+        border-radius: var(--radius-sm);
+        padding: 11px 14px;
+        margin-top: -10px;
+        margin-bottom: 16px;
+        align-items: center;
+        gap: 10px;
+    }
+    .asset-preview > i { color: var(--primary); font-size: 16px; flex-shrink: 0; }
+    .asset-preview-body { min-width: 0; flex: 1; }
+    .asset-preview-title  { font-size: 12px; color: var(--primary); font-weight: 700; margin: 0 0 1px; }
+    .asset-preview-detail { font-size: 12.5px; color: var(--gray-600); margin: 0; }
+    .asset-preview-change {
+        margin-left: auto; background: none; border: none; cursor: pointer;
+        color: var(--gray-400); font-size: 13px; flex-shrink: 0; padding: 0;
+    }
+
+    /* ── Lokasi terkunci (auto-fill dari aset) ── */
+    .locked-input {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        cursor: not-allowed;
+    }
+
+    /* ── Upload foto ── */
+    .foto-preview-grid {
+        display: none;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .foto-preview-item {
+        position: relative; aspect-ratio: 1;
+        border-radius: 8px; overflow: hidden;
+        border: 1px solid var(--gray-200);
+    }
+    .foto-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .foto-badge-utama {
+        position: absolute; top: 4px; left: 4px;
+        background: var(--info); color: #fff;
+        font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;
+    }
+    .foto-btn-del {
+        position: absolute; top: 4px; right: 4px;
+        width: 22px; height: 22px; border-radius: 50%;
+        background: rgba(0,0,0,.55); border: none; color: #fff;
+        cursor: pointer; font-size: 14px; line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .foto-btn-primary {
+        position: absolute; bottom: 4px; left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,.55); border: none; color: #fff;
+        font-size: 10px; padding: 2px 7px; border-radius: 4px;
+        cursor: pointer; white-space: nowrap;
+    }
+    .foto-counter {
+        display: none;
+        font-size: 12px; color: var(--gray-500);
+        text-align: right; margin-bottom: 8px;
+    }
+    .foto-dropzone {
+        border: 1.5px dashed var(--gray-300);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: var(--gray-50);
+        transition: border-color var(--transition), background var(--transition);
+    }
+    .foto-dropzone:hover { border-color: var(--primary); background: var(--primary-xlight); }
+    .foto-dropzone i { font-size: 24px; color: var(--gray-400); display: block; margin-bottom: 6px; }
+    .foto-dropzone p { margin: 0; font-size: 13px; color: var(--gray-500); }
+    .foto-dropzone span { font-size: 11px; color: var(--gray-400); }
+
+    .form-actions {
+        display: flex; gap: 10px; justify-content: flex-end;
+        padding-top: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+        .foto-preview-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+</style>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('scripts'); ?>
 <?php
@@ -338,9 +464,9 @@ function hideSuggestions() {
 function updateStatusIcon() {
     statusIcon.style.display = inputNama.value.trim() ? 'block' : 'none';
     if (assetTerpilih) {
-        statusIcon.innerHTML = '<i class="fas fa-circle-check" style="color:var(--primary);"></i>';
+        statusIcon.innerHTML = '<i class="fas fa-circle-check"></i>';
     } else if (inputNama.value.trim()) {
-        statusIcon.innerHTML = '<i class="fas fa-circle-exclamation" style="color:var(--warning,#f59e0b);"></i>';
+        statusIcon.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
     }
 }
 
@@ -369,8 +495,8 @@ inputNama.addEventListener('input', function () {
 
     if (!matches.length) {
         suggestions.innerHTML = `
-            <div style="padding:12px 14px;font-size:13px;color:var(--gray-400);text-align:center;">
-                <i class="fas fa-magnifying-glass" style="margin-right:5px;"></i>
+            <div class="suggestion-empty">
+                <i class="fas fa-magnifying-glass"></i>
                 Tidak ada aset yang berawalan "<strong>${escHtml(this.value.trim())}</strong>"
             </div>`;
         suggestions.style.display = 'block';
@@ -378,7 +504,7 @@ inputNama.addEventListener('input', function () {
         return;
     }
 
-    suggestions.innerHTML = matches.map((a, i) => `
+    suggestions.innerHTML = matches.map((a) => `
         <div class="suggestion-item"
              role="option"
              tabindex="-1"
@@ -386,22 +512,14 @@ inputNama.addEventListener('input', function () {
              data-nama="${escHtml(a.nama)}"
              data-kode="${escHtml(a.kode)}"
              data-lokasi="${escHtml(a.lokasi)}"
-             onclick="selectAsset(this)"
-             style="padding:10px 14px;cursor:pointer;font-size:13.5px;
-                    border-bottom:1px solid var(--gray-100);
-                    ${i === matches.length - 1 ? 'border-bottom:none;' : ''}">
-            <div style="display:flex;align-items:center;gap:6px;">
-                <i class="fas fa-box" style="color:var(--primary);font-size:12px;flex-shrink:0;"></i>
-                <span style="font-weight:600;color:var(--gray-800);">${escHtml(a.nama)}</span>
-                <span style="font-size:11.5px;color:var(--gray-400);background:var(--gray-100);
-                             padding:1px 6px;border-radius:4px;margin-left:auto;flex-shrink:0;">
-                    ${escHtml(a.kode)}
-                </span>
+             onclick="selectAsset(this)">
+            <div class="si-row">
+                <i class="fas fa-box"></i>
+                <span class="si-name">${escHtml(a.nama)}</span>
+                <span class="si-code">${escHtml(a.kode)}</span>
             </div>
             ${a.lokasi ? `
-            <div style="font-size:11.5px;color:var(--gray-400);margin-top:3px;padding-left:18px;">
-                <i class="fas fa-location-dot" style="font-size:10px;margin-right:3px;"></i>${escHtml(a.lokasi)}
-            </div>` : ''}
+            <div class="si-loc"><i class="fas fa-location-dot"></i>${escHtml(a.lokasi)}</div>` : ''}
         </div>
     `).join('');
 
@@ -509,18 +627,19 @@ suggestions.addEventListener('keydown', function (e) {
     }
 });
 
-// ─── Hover styling saran ──────────────────────────────────────────────────
+// ─── Hover styling saran (di-handle via CSS :hover sebenarnya cukup,
+//      tapi dipertahankan agar konsisten dengan navigasi keyboard/focus) ──
 suggestions.addEventListener('mouseover', function (e) {
     const item = e.target.closest('.suggestion-item');
     if (item) {
         suggestions.querySelectorAll('.suggestion-item').forEach(el =>
-            el.style.background = '');
-        item.style.background = 'var(--primary-xlight)';
+            el.classList.remove('is-hover'));
+        item.classList.add('is-hover');
     }
 });
 suggestions.addEventListener('mouseout', function (e) {
     const item = e.target.closest('.suggestion-item');
-    if (item) item.style.background = '';
+    if (item) item.classList.remove('is-hover');
 });
 
 // ─── Init: pulihkan state setelah validasi gagal (old values) ────────────
@@ -548,10 +667,7 @@ function applyLokasiState(lokasi) {
     const lokasiHint   = document.getElementById('lokasiHint');
     inputLokasi.value  = lokasi || '';
     inputLokasi.readOnly = true;
-    inputLokasi.style.background = '#f3f4f6';
-    inputLokasi.style.color      = '#6b7280';
-    inputLokasi.style.cursor     = 'not-allowed';
-    lokasiHint.style.display     = 'block';
+    lokasiHint.style.display = 'block';
 }
 
 function resetLokasiState() {
@@ -559,10 +675,7 @@ function resetLokasiState() {
     const lokasiHint   = document.getElementById('lokasiHint');
     inputLokasi.value  = '';
     inputLokasi.readOnly = true;
-    inputLokasi.style.background = '#f3f4f6';
-    inputLokasi.style.color      = '#6b7280';
-    inputLokasi.style.cursor     = 'not-allowed';
-    lokasiHint.style.display     = 'none';
+    lokasiHint.style.display = 'none';
 }
 
 // Patch selectAsset agar memanggil applyLokasiState
@@ -623,32 +736,26 @@ window.clearAsset = function() {
 
         photos.forEach(function (p, i) {
             const wrap = document.createElement('div');
-            wrap.style.cssText = 'position:relative;aspect-ratio:1;border-radius:8px;'
-                               + 'overflow:hidden;border:1px solid #e5e7eb;';
+            wrap.className = 'foto-preview-item';
 
             const img = document.createElement('img');
             img.src   = p.dataUrl;
             img.alt   = 'Foto ' + (i + 1);
-            img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
             wrap.appendChild(img);
 
             if (i === primaryIdx) {
                 const badge = document.createElement('span');
+                badge.className   = 'foto-badge-utama';
                 badge.textContent = 'Utama';
-                badge.style.cssText = 'position:absolute;top:4px;left:4px;background:#2563eb;'
-                    + 'color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;';
                 wrap.appendChild(badge);
             }
 
             const btnDel = document.createElement('button');
-            btnDel.type  = 'button';
+            btnDel.type      = 'button';
+            btnDel.className = 'foto-btn-del';
             btnDel.innerHTML = '&times;';
-            btnDel.title = 'Hapus foto';
-            btnDel.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;'
-                + 'border-radius:50%;background:rgba(0,0,0,.55);border:none;color:#fff;'
-                + 'cursor:pointer;font-size:14px;line-height:1;display:flex;'
-                + 'align-items:center;justify-content:center;';
-            btnDel.onclick = function () {
+            btnDel.title     = 'Hapus foto';
+            btnDel.onclick   = function () {
                 photos.splice(i, 1);
                 if (primaryIdx >= photos.length) primaryIdx = 0;
                 render();
@@ -657,12 +764,10 @@ window.clearAsset = function() {
 
             if (i !== primaryIdx) {
                 const btnPri = document.createElement('button');
-                btnPri.type = 'button';
+                btnPri.type      = 'button';
+                btnPri.className = 'foto-btn-primary';
                 btnPri.textContent = 'Jadikan utama';
-                btnPri.style.cssText = 'position:absolute;bottom:4px;left:50%;transform:translateX(-50%);'
-                    + 'background:rgba(0,0,0,.55);border:none;color:#fff;font-size:10px;'
-                    + 'padding:2px 7px;border-radius:4px;cursor:pointer;white-space:nowrap;';
-                btnPri.onclick = function () { primaryIdx = i; render(); };
+                btnPri.onclick   = function () { primaryIdx = i; render(); };
                 wrap.appendChild(btnPri);
             }
 

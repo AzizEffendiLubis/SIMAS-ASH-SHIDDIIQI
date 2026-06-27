@@ -35,7 +35,8 @@
 
 <form action="<?php echo e(route('users.store')); ?>" method="POST">
     <?php echo csrf_field(); ?>
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;" class="dash-two-col">
+    
+    <div class="dash-two-col">
 
         
         <div style="display:flex;flex-direction:column;gap:16px;">
@@ -341,13 +342,11 @@ unset($__errorArgs, $__bag); ?>
                         Admin Utama otomatis mendapat akses penuh.
                     </p>
                     
-                    <div id="menuAccessList" style="display:flex;flex-direction:column;gap:10px;">
+                    <div id="menuAccessList" class="menu-access-list">
                         <?php $__currentLoopData = $allMenus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;
-                               color:var(--gray-700);">
+                        <label class="menu-access-item">
                             <input type="checkbox" name="menu_access[]"
                                 value="<?php echo e($key); ?>"
-                                style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;"
                                 <?php echo e(in_array($key, old('menu_access', [])) ? 'checked' : ''); ?>>
                             <?php echo e($label); ?>
 
@@ -358,7 +357,7 @@ unset($__errorArgs, $__bag); ?>
             </div>
 
             
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <div class="form-actions">
                 <a href="<?php echo e(route('users.index')); ?>" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
@@ -370,6 +369,27 @@ unset($__errorArgs, $__bag); ?>
         </div>
     </div>
 </form>
+
+<?php $__env->startPush('styles'); ?>
+<style>
+    .menu-access-list { display: flex; flex-direction: column; gap: 10px; }
+    .menu-access-item {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13px; cursor: pointer; color: var(--gray-700);
+    }
+    .menu-access-item input[type="checkbox"] {
+        width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+    }
+</style>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('scripts'); ?>
 <script>

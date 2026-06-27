@@ -35,7 +35,11 @@
 
 <form action="{{ route('users.store') }}" method="POST">
     @csrf
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;align-items:start;" class="dash-two-col">
+    {{-- Catatan: cukup pakai class "dash-two-col" (sudah punya rule responsive
+         di layout: 2 kolom desktop, 1 kolom HP). Inline grid-template-columns
+         dihapus karena selalu menang melawan @media dan menghalangi stack
+         di mobile. --}}
+    <div class="dash-two-col">
 
         {{-- ══════════════════ KOLOM KIRI ══════════════════ --}}
         <div style="display:flex;flex-direction:column;gap:16px;">
@@ -221,13 +225,11 @@
                         menu_access: JSON array, cast 'array' di User model.
                         $allMenus dari UserController — 6 menu aktif.
                     --}}
-                    <div id="menuAccessList" style="display:flex;flex-direction:column;gap:10px;">
+                    <div id="menuAccessList" class="menu-access-list">
                         @foreach($allMenus as $key => $label)
-                        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;
-                               color:var(--gray-700);">
+                        <label class="menu-access-item">
                             <input type="checkbox" name="menu_access[]"
                                 value="{{ $key }}"
-                                style="width:15px;height:15px;accent-color:var(--primary);cursor:pointer;"
                                 {{ in_array($key, old('menu_access', [])) ? 'checked' : '' }}>
                             {{ $label }}
                         </label>
@@ -237,7 +239,7 @@
             </div>
 
             {{-- Aksi --}}
-            <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <div class="form-actions">
                 <a href="{{ route('users.index') }}" class="btn btn-outline">
                     <i class="fas fa-xmark"></i> Batal
                 </a>
@@ -249,6 +251,27 @@
         </div>
     </div>
 </form>
+
+@push('styles')
+<style>
+    .menu-access-list { display: flex; flex-direction: column; gap: 10px; }
+    .menu-access-item {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13px; cursor: pointer; color: var(--gray-700);
+    }
+    .menu-access-item input[type="checkbox"] {
+        width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>

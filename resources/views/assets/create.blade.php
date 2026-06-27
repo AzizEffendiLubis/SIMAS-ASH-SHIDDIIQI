@@ -3,12 +3,16 @@
 @section('page-title', 'Tambah Aset')
 
 @section('content')
-<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-    <div>
+
+{{-- ── Page Header ── --}}
+<div class="page-header-row">
+    <div class="ph-left">
         <h1>Tambah Aset Baru</h1>
         <p>Isi formulir di bawah untuk menambahkan aset baru</p>
     </div>
-    <a href="{{ route('assets.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Kembali</a>
+    <div class="ph-right">
+        <a href="{{ route('assets.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Kembali</a>
+    </div>
 </div>
 
 <div class="card">
@@ -16,16 +20,16 @@
         <form action="{{ route('assets.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:16px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">Informasi Barang</p>
+            <p class="section-title">Informasi Barang</p>
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label">Nama Barang <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Nama Barang <span class="required">*</span></label>
                     <input type="text" name="nama_barang" class="form-control {{ $errors->has('nama_barang') ? 'is-invalid' : '' }}" placeholder="Contoh: Laptop ASUS VivoBook" value="{{ old('nama_barang') }}">
                     @error('nama_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Kategori <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Kategori <span class="required">*</span></label>
                     <select name="kategori" class="form-control {{ $errors->has('kategori') ? 'is-invalid' : '' }}">
                         <option value="">-- Pilih Kategori --</option>
                         @foreach($categories as $cat)
@@ -35,13 +39,13 @@
                     @error('kategori') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Lokasi Barang <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Lokasi Barang <span class="required">*</span></label>
                     <input type="text" name="lokasi_barang" class="form-control {{ $errors->has('lokasi_barang') ? 'is-invalid' : '' }}" placeholder="Contoh: Ruang Kelas 7A" value="{{ old('lokasi_barang') }}">
                     @error('lokasi_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
                     {{-- unit_id: FK ke tabel units. Admin Utama pilih bebas; Admin Unit dikunci ke unitnya sendiri. --}}
-                    <label class="form-label">Unit Kerja <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Unit Kerja <span class="required">*</span></label>
                     <select name="unit_id" class="form-control {{ $errors->has('unit_id') ? 'is-invalid' : '' }}"
                         {{ auth()->user()->isAdminUnit() ? 'disabled' : '' }}>
                         <option value="">-- Pilih Unit --</option>
@@ -59,11 +63,11 @@
                 </div>
             </div>
 
-            <p style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:16px;margin-top:8px;padding-bottom:8px;border-bottom:1.5px solid #eff6ff;">Detail &amp; Kondisi</p>
+            <p class="section-title" style="margin-top:8px;">Detail &amp; Kondisi</p>
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label">Jumlah Barang <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Jumlah Barang <span class="required">*</span></label>
                     <input type="number" name="jumlah_barang" class="form-control {{ $errors->has('jumlah_barang') ? 'is-invalid' : '' }}" min="1" value="{{ old('jumlah_barang', 1) }}">
                     @error('jumlah_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
@@ -90,7 +94,7 @@
                     @error('sumber_dana_id') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Harga Barang (Rp) <span style="color:#dc2626;">*</span></label>
+                    <label class="form-label">Harga Barang (Rp) <span class="required">*</span></label>
                     <input type="number" name="harga_barang" class="form-control {{ $errors->has('harga_barang') ? 'is-invalid' : '' }}" min="0" placeholder="0" value="{{ old('harga_barang') }}">
                     @error('harga_barang') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
@@ -99,23 +103,18 @@
                     <input type="date" name="tanggal_pengadaan" class="form-control {{ $errors->has('tanggal_pengadaan') ? 'is-invalid' : '' }}" value="{{ old('tanggal_pengadaan') }}">
                     @error('tanggal_pengadaan') <p class="invalid-feedback">{{ $message }}</p> @enderror
                 </div>
-                <div class="form-group" id="foto-group">
+                <div class="form-group col-span-2" id="foto-group">
                     <label class="form-label">Foto Barang</label>
 
-                    {{-- Grid preview foto yang sudah dipilih --}}
-                    <div id="foto-preview-grid" style="display:none; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px;"></div>
-                    <p id="foto-counter" style="display:none; font-size:12px; color:#6b7280; text-align:right; margin-bottom:8px;"></p>
+                    {{-- Grid preview foto yang sudah dipilih — auto-fit agar tidak fix 5 kolom yang sempit di HP --}}
+                    <div id="foto-preview-grid" class="foto-preview-grid"></div>
+                    <p id="foto-counter" class="foto-counter"></p>
 
                     {{-- Tombol tambah foto — disembunyikan otomatis saat sudah 5 --}}
-                    <div id="foto-dropzone"
-                        onclick="document.getElementById('foto-picker').click()"
-                        style="border:1.5px dashed #d1d5db; border-radius:10px; padding:1.5rem; text-align:center;
-                                cursor:pointer; background:#f9fafb; transition:border-color .15s,background .15s;"
-                        onmouseover="this.style.borderColor='#2563eb';this.style.background='#eff6ff'"
-                        onmouseout="this.style.borderColor='#d1d5db';this.style.background='#f9fafb'">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:#9ca3af; display:block; margin-bottom:6px;"></i>
-                        <p style="margin:0; font-size:13px; color:#6b7280;">Klik untuk pilih foto</p>
-                        <span style="font-size:11px; color:#9ca3af;">JPG / PNG / WEBP · maks. 2 MB per foto · hingga 5 foto</span>
+                    <div id="foto-dropzone" class="foto-dropzone" onclick="document.getElementById('foto-picker').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Klik untuk pilih foto</p>
+                        <span>JPG / PNG / WEBP &middot; maks. 2 MB per foto &middot; hingga 5 foto</span>
                     </div>
 
                     {{-- Hidden file input — single (bukan multiple) agar user pilih satu per satu --}}
@@ -138,7 +137,7 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Dasar / Keterangan Persetujuan <span style="color:#dc2626;">*</span></label>
+                <label class="form-label">Dasar / Keterangan Persetujuan <span class="required">*</span></label>
                 <textarea name="keterangan_dasar" class="form-control {{ $errors->has('keterangan_dasar') ? 'is-invalid' : '' }}" rows="2" placeholder="Dasar penambahan atau keterangan persetujuan aset...">{{ old('keterangan_dasar') }}</textarea>
                 @error('keterangan_dasar') <p class="invalid-feedback">{{ $message }}</p> @enderror
             </div>
@@ -148,7 +147,7 @@
                 <textarea name="keterangan" class="form-control" rows="3" placeholder="Keterangan tambahan tentang aset ini...">{{ old('keterangan') }}</textarea>
             </div>
 
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+            <div class="form-actions">
                 <a href="{{ route('assets.index') }}" class="btn btn-outline">Batal</a>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Simpan Aset</button>
             </div>
@@ -156,6 +155,49 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    /* ── Dropzone foto: dipindah dari inline style agar bisa di-override per breakpoint ── */
+    .foto-dropzone {
+        border: 1.5px dashed var(--gray-300);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: var(--gray-50);
+        transition: border-color var(--transition), background var(--transition);
+    }
+    .foto-dropzone:hover { border-color: var(--primary); background: var(--primary-xlight); }
+    .foto-dropzone i { font-size: 24px; color: var(--gray-400); display: block; margin-bottom: 6px; }
+    .foto-dropzone p { margin: 0; font-size: 13px; color: var(--gray-500); }
+    .foto-dropzone span { font-size: 11px; color: var(--gray-400); }
+
+    /* ── Grid preview: auto-fit, jadi otomatis sedikit kolom di HP tanpa media query ── */
+    .foto-preview-grid {
+        display: none;
+        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .foto-preview-grid.has-items { display: grid; }
+    .foto-counter {
+        display: none;
+        font-size: 12px; color: var(--gray-500);
+        text-align: right; margin-bottom: 8px;
+    }
+    .foto-counter.has-items { display: block; }
+
+    .form-actions {
+        display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;
+    }
+    @media (max-width: 768px) {
+        .form-actions { flex-direction: column-reverse; }
+        .form-actions .btn { width: 100%; justify-content: center; }
+        .foto-preview-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -196,11 +238,11 @@
     function render() {
         /* Counter */
         counter.textContent = photos.length + ' / ' + MAX + ' foto dipilih';
-        counter.style.display  = photos.length ? 'block' : 'none';
+        counter.classList.toggle('has-items', photos.length > 0);
 
         /* Grid */
-        grid.style.display = photos.length ? 'grid' : 'none';
-        grid.innerHTML     = '';
+        grid.classList.toggle('has-items', photos.length > 0);
+        grid.innerHTML = '';
 
         photos.forEach(function (p, i) {
             const wrap = document.createElement('div');
