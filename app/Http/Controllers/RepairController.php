@@ -250,7 +250,7 @@ class RepairController extends Controller
                 if ($repair->ditangani_oleh !== $user->id) abort(403);
 
                 $validated = $request->validate([
-                    'status'             => 'required|in:sedang_diperbaiki,selesai',
+                    'status'             => 'required|in:sedang_diperbaiki,selesai,tidak_dapat_diperbaiki',
                     'tindakan_perbaikan' => 'required|string',
                     'biaya_perbaikan'    => 'nullable|numeric|min:0',
                 ]);
